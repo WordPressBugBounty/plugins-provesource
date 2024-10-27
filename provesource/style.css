@@ -9,23 +9,23 @@
 	padding-left: 2px;
 }
 
-.m-t{
+#ps-settings .m-t {
 	margin-top: 10px;
 }
 
-.m-t-2 {
+#ps-settings .m-t-2 {
     margin-top: 20px;
 }
 
-.m-r {
+#ps-settings .m-r {
     margin-right: 10px;
 }
 
-.strong {
+#ps-settings .strong {
     font-weight: 600;
 }
 
-.d-inline-block {
+#ps-settings .d-inline-block {
     display: inline-block;
 }
 
@@ -127,24 +127,24 @@
 
 /** switch */
 
-.onoffswitch {
+.ps-toggle {
     position: relative; 
     width: 50px;
     -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
 }
-.onoffswitch-checkbox {
+.ps-toggle-checkbox {
     position: absolute;
     opacity: 0;
     pointer-events: none;
 }
-.onoffswitch-label {
+.ps-toggle-label {
     display: block; overflow: hidden; cursor: pointer;
     height: 25px; padding: 0; line-height: 25px;
     border: 2px solid #E3E3E3; border-radius: 25px;
     background-color: #FFFFFF;
     transition: background-color 0.3s ease-in;
 }
-.onoffswitch-label:before {
+.ps-toggle-label:before {
     content: "";
     display: block; width: 25px; margin: 0px;
     background: #FFFFFF;
@@ -153,13 +153,13 @@
     border: 2px solid #E3E3E3; border-radius: 25px;
     transition: all 0.3s ease-in 0s; 
 }
-.onoffswitch-checkbox:checked + .onoffswitch-label {
+.ps-toggle-checkbox:checked + .ps-toggle-label {
     background-color: #49E845;
 }
-.onoffswitch-checkbox:checked + .onoffswitch-label, .onoffswitch-checkbox:checked + .onoffswitch-label:before {
+.ps-toggle-checkbox:checked + .ps-toggle-label, .ps-toggle-checkbox:checked + .ps-toggle-label:before {
    border-color: #49E845;
 }
-.onoffswitch-checkbox:checked + .onoffswitch-label:before {
+.ps-toggle-checkbox:checked + .ps-toggle-label:before {
     right: 0px; 
 }
 

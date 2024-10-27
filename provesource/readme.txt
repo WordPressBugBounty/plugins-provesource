@@ -5,7 +5,7 @@ Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
 Requires PHP: 5.2
 Requires at least: 3.1.0
 Tested up to: 6.6
-Stable tag: 2.4.2
+Stable tag: 3.0.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -96,6 +96,11 @@ including remote webhook calls, data collected includes product details and cust
 4. Dashboard list of notifications
 
 == Changelog ==
+
+= 3.0.x =
+Add woocommerce event selector
+Add option to import last 30 orders manually
+Add debug.log downloader for easier debugging
 
 = 2.3.x =
 Update WooCommerce HPOS compatability
