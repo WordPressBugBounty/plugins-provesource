@@ -5,7 +5,7 @@ Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
 Requires PHP: 5.2
 Requires at least: 3.1.0
 Tested up to: 6.6
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 

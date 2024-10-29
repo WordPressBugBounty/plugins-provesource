@@ -7,7 +7,7 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
@@ -51,7 +51,7 @@ class PSConstants
 
     public static function version()
     {
-        return '2.4.1';
+        return '3.0.1';
     }
 
     public static function option_hook_key()
@@ -127,27 +127,7 @@ function provesrc_inject_code()
     $version = PSConstants::version();
     $apiKey = provesrc_get_api_key(); ?>
 
-    <!-- Start of Async ProveSource Code (Wordpress / Woocommerce v<?php echo $version; ?>) -->
-    <script>
-        ! function(o, i) {
-            window.provesrc && window.console && console.error && console.error("ProveSource is included twice in this page."), provesrc = window.provesrc = {
-                dq: [],
-                display: function() {
-                    this.dq.push(arguments)
-                }
-            }, o._provesrcAsyncInit = function() {
-                provesrc.init({
-                    apiKey: "<?php echo esc_html($apiKey); ?>",
-                    v: "0.0.4"
-                })
-            };
-            var r = i.createElement("script");
-            r.async = !0, r["ch" + "ar" + "set"] = "UTF-8", r.src = "https://cdn.provesrc.com/provesrc.js";
-            var e = i.getElementsByTagName("script")[0];
-            e.parentNode.insertBefore(r, e)
-        }(window, document);
-    </script><!-- End of Async ProveSource Code -->
-
+    <!-- Start of Async ProveSource Code (Wordpress / Woocommerce v<?php echo $version; ?>) --><script>!function(o,i){window.provesrc&&window.console&&console.error&&console.error("ProveSource is included twice in this page."),provesrc=window.provesrc={dq:[],display:function(){this.dq.push(arguments)}},o._provesrcAsyncInit=function(){provesrc.init({apiKey:"<?php echo esc_html($apiKey); ?>",v:"0.0.4"})};var r=i.createElement("script");r.async=!0,r["ch"+"ar"+"set"]="UTF-8",r.src="https://cdn.provesrc.com/provesrc.js";var e=i.getElementsByTagName("script")[0];e.parentNode.insertBefore(r,e)}(window,document);</script><!-- End of Async ProveSource Code -->
 <?php
 }
 
