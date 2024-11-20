@@ -7,14 +7,14 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
  * Text Domain: provesrc-plugin
  * 
  * WC requires at least: 3.0
- * WC tested up to: 9.3
+ * WC tested up to: 9.4
  */
 
 if (!defined('ABSPATH')) {
@@ -24,6 +24,16 @@ if (!defined('ABSPATH')) {
 /** constants */
 class PSConstants
 {
+    public static function host()
+    {
+        return 'https://api.provesrc.com';
+    }
+
+    public static function version()
+    {
+        return '3.0.2';
+    }
+
     public static function options_group()
     {
         return 'provesrc_options';
@@ -44,19 +54,9 @@ class PSConstants
         return 'ps_debug';
     }
 
-    public static function host()
+    public static function option_events_key()
     {
-        return 'https://api.provesrc.com';
-    }
-
-    public static function version()
-    {
-        return '3.0.1';
-    }
-
-    public static function option_hook_key()
-    {
-        return 'provesrc_hooks';
+        return 'ps_events';
     }
 }
 
@@ -86,7 +86,7 @@ register_activation_hook(__FILE__, 'provesrc_activation_hook');
 register_deactivation_hook(__FILE__, 'provesrc_deactivation_hook');
 add_action('update_option_' . PSConstants::option_api_key(), 'provesrc_api_key_updated', 999, 0);
 add_action('add_option_' . PSConstants::option_api_key(), 'provesrc_api_key_updated', 999, 0);
-add_action('update_option_' . PSConstants::option_hook_key(), 'provesrc_hook_updated', 999, 3);
+add_action('update_option_' . PSConstants::option_events_key(), 'provesrc_hook_updated', 999, 3);
 
 add_action('wp_ajax_import_last_30_orders', 'ps_import_last_30_orders');
 add_action('wp_ajax_download_debug_log', 'provesrc_download_debug_log');
@@ -102,7 +102,7 @@ function provesrc_admin_init()
     register_setting(PSConstants::options_group(), PSConstants::option_api_key());
     register_setting(PSConstants::options_group(), PSConstants::legacy_option_api_key());
     register_setting(PSConstants::options_group(), PSConstants::option_debug_key());
-    register_setting(PSConstants::options_group(), PSConstants::option_hook_key());
+    register_setting(PSConstants::options_group(), PSConstants::option_events_key());
     wp_register_style('dashicons-provesrc', plugin_dir_url(__FILE__) . '/assets/css/dashicons-provesrc.css');
     wp_enqueue_style('dashicons-provesrc');
 
@@ -133,16 +133,17 @@ function provesrc_inject_code()
 
 function provesrc_woocommerce_hook_handler($arg1, $arg2 = null, $arg3 = null)
 {
-    $selected_hook = get_option(PSConstants::option_hook_key());
-    $current_hook = current_filter();
-    if (!$selected_hook) {
-        $selected_hook = 'woocommerce_checkout_order_processed';
+    $selectedEvents = get_option(PSConstants::option_events_key(), []);
+    $currentEvent = current_filter();
+    if (!$selectedEvents) {
+        $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
     }
-    if ($current_hook !== $selected_hook) {
+    if (!in_array($currentEvent, (array)$selectedEvents)) {
+        provesrc_log('order handler skipping event', ['current' => $currentEvent, 'selected' => $selectedEvents]);
         return;
     }
     try {
-        switch ($current_hook) {
+        switch ($currentEvent) {
             case 'woocommerce_checkout_create_order':
                 provesrc_order_created_hook($arg1, $arg2);
                 break;
@@ -154,7 +155,7 @@ function provesrc_woocommerce_hook_handler($arg1, $arg2 = null, $arg3 = null)
                 break;
         }
     } catch (Exception $err) {
-        provesrc_handle_error('Failed to process order through hook: ' . $current_hook, $err, ['arg1' => $arg1, 'arg2' => $arg2, 'arg3' => $arg3]);
+        provesrc_handle_error('Failed to process order from event: ' . $currentEvent, $err, ['arg1' => $arg1, 'arg2' => $arg2, 'arg3' => $arg3]);
     }
 }
 
@@ -263,7 +264,6 @@ function provesrc_api_key_updated()
                 array_push($orders, provesrc_get_order_payload($wco, false));
             }
         }
-
         $data = array(
             'secret' => 'simple-secret',
             'woocommerce' => provesrc_has_woocommerce(),
@@ -304,10 +304,12 @@ function provesrc_hook_updated()
     try {
         $apiKey = provesrc_get_api_key();
         if ($apiKey == null) {
-            provesrc_log('bad api key, hook update not sent');
+            provesrc_log('bad api key, selected events update not sent');
             return;
         }
-        provesrc_log('hook updated');
+        $optionKey = PSConstants::option_events_key();
+        $selectedEvents = isset($_POST[$optionKey]) ? array_map('sanitize_text_field', $_POST[$optionKey]) : [];
+        update_option($optionKey, $selectedEvents);
 
         $data = array(
             'secret' => 'simple-secret',
@@ -317,11 +319,12 @@ function provesrc_hook_updated()
             'siteName' => get_bloginfo('name'),
             'multisite' => is_multisite(),
             'description' => get_bloginfo('description'),
+            'selectedEvents' => $selectedEvents,
         );
-        provesrc_log('sending hook update');
+        provesrc_log('sending selected events update', $data);
         provesrc_send_request('/wp/setup', $data);
     } catch (Exception $err) {
-        provesrc_handle_error('failed updating hook', $err);
+        provesrc_handle_error('failed updating selected events', $err);
     }
 }
 
@@ -660,7 +663,22 @@ function provesrc_admin_menu_page_html()
         return;
     }
 
-    $apiKey = provesrc_get_api_key(); ?>
+    $apiKey = provesrc_get_api_key(); 
+    $selectedEvents = get_option(PSConstants::option_events_key(), []);
+    if (!$selectedEvents) {
+        $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
+    }
+    $woocommerce_hooks = [
+        'woocommerce_order_status_completed' => 'Order Status Completed (Recommended)',
+        'woocommerce_order_status_pending' => 'Order Status Pending Payment',
+        'woocommerce_order_status_processing' => 'Order Status Processing',
+        'woocommerce_checkout_create_order' => 'Checkout Order Created',
+        'woocommerce_checkout_order_processed' => 'Checkout Order Processed (Recommended)',
+        'woocommerce_payment_complete' => 'Payment Complete',
+        'woocommerce_thankyou' => 'Thank You',
+        'woocommerce_new_order' => 'New Order',
+    ];
+    ?>
 
     <div class="wrap" id="ps-settings">
         <!-- <h1><?= esc_html(get_admin_page_title()); ?></h1> -->
@@ -671,16 +689,6 @@ function provesrc_admin_menu_page_html()
             <?php
             settings_fields(PSConstants::options_group());
             do_settings_sections(PSConstants::options_group());
-            $woocommerce_hooks = [
-                'woocommerce_order_status_completed' => 'Order Status Completed',
-                'woocommerce_order_status_pending' => 'Order Status Pending Payment',
-                'woocommerce_order_status_processing' => 'Order Status Processing',
-                'woocommerce_checkout_create_order' => 'Checkout Order Created',
-                'woocommerce_checkout_order_processed' => 'Checkout Order Processed',
-                'woocommerce_payment_complete' => 'Payment Complete',
-                'woocommerce_thankyou' => 'Thank You',
-                'woocommerce_new_order' => 'New Order',
-            ];
             ?>
             <div class="ps-settings-container">
                 <?php if ($apiKey != null) { ?>
@@ -694,20 +702,23 @@ function provesrc_admin_menu_page_html()
                     <div class="account-link">If you don't have an account - <a href="https://console.provesrc.com/?utm_source=woocommerce&utm_medium=plugin&utm_campaign=woocommerce-signup#/signup" target="_blank">signup here!</a></div>
                 <?php } ?>
                 <div class="label">Your API Key:</div>
-                <input type="text" placeholder="required" name="<?php echo PSConstants::option_api_key(); ?>" value="<?php echo esc_attr($apiKey); ?>" />
+                    <input type="text" class="ps-apikey" placeholder="required" name="<?php echo PSConstants::option_api_key(); ?>" value="<?php echo esc_attr($apiKey); ?>" />
                 <div class="m-t"><a href="https://console.provesrc.com/#/settings" target="_blank">Where is my API Key?</a></div>
                 <?php if (provesrc_has_woocommerce()) { ?>
                     <div class="m-t-2">
-                        <label class="strong" for="woo_hooks">WooCommerce Event</label>
-                        <p class="description">Select which WooCommerce event ProveSource will track for fetching new orders (recommended "Order Status Completed"):</p>
-                        <select class="m-t-1 m-b-1" name="<?php echo PSConstants::option_hook_key(); ?>" id="woo_hooks">
-                            <?php foreach ($woocommerce_hooks as $hook_value => $hook_label) { ?>
-                                <option value="<?php echo esc_attr($hook_value); ?>"
-                                    <?php selected(get_option(PSConstants::option_hook_key()), $hook_value); ?>>
-                                    <?php echo esc_html($hook_label); ?>
-                                </option>
-                            <?php } ?>
-                        </select>
+                        <label class="strong" for="woo_events">WooCommerce Events</label>
+                        <p class="description">Select which WooCommerce order/checkout events ProveSource will track:</p>
+                        <?php foreach ($woocommerce_hooks as $hook_value => $hook_label) { 
+                            $isChecked = in_array($hook_value, (array) $selectedEvents);
+                            ?>
+                            <input id="woo_events" type="checkbox" 
+                                name="<?php echo PSConstants::option_events_key() . '[]'; ?>" 
+                                value="<?php echo esc_attr($hook_value); ?>"
+                                <?php checked($isChecked); ?> >
+                                <?php echo esc_html($hook_label); ?>
+                            </input>
+                            <br>
+                        <?php } ?>
                     </div>
                 <?php } ?>
                 <div style="overflow: auto; margin-top:10px">
@@ -720,9 +731,7 @@ function provesrc_admin_menu_page_html()
                         </div>
                         <div class="d-inline-block ps-toggle" style="float: left;margin-top:8px; margin-left:10px">
                             <input type="checkbox" class="ps-toggle-checkbox" id="ps-toggle" tabindex="0"
-                                name="<?php echo PSConstants::option_debug_key(); ?>" <?php if (provesrc_get_debug()) {
-                                                                                            echo "checked";
-                                                                                        } ?>>
+                                name="<?php echo PSConstants::option_debug_key(); ?>" <?php if (provesrc_get_debug()) { echo "checked"; } ?>>
                             <label class="ps-toggle-label" for="ps-toggle"></label>
                         </div>
                     </div>

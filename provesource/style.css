@@ -34,7 +34,7 @@
     box-shadow: 0 0 2px rgb(119, 37, 243);
 }
 
-.ps-settings-container input {
+.ps-settings-container .ps-apikey {
 	width: 50%;
     padding: 10px;
     border-radius: 4px;
