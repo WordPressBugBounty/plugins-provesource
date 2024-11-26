@@ -5,7 +5,7 @@ Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
 Requires PHP: 5.2
 Requires at least: 3.1.0
 Tested up to: 6.6
-Stable tag: 3.0.2
+Stable tag: 3.0.4
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -13,7 +13,8 @@ ProveSource Social Proof increases conversions by up to 17%, boost trust with wo
 
 == Description ==
 
-= Wordpress and WooCommerce Fomo Plugin =
+ProveSource is a [social proof tool](https://provesrc.com/) & [fomo app](https://provesrc.com/fomo-app/) that boosts conversions on your WooCommerce website.
+
 Ever booked a hotel in booking.com because it was hot selling and you didn't want to miss?
 Ever went to a restaurant based on a recommendation? 
 
