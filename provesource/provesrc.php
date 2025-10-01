@@ -7,7 +7,7 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 3.0.5
+ * Version: 3.1.1
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
@@ -22,43 +22,24 @@ if (!defined('ABSPATH')) {
 }
 
 /** constants */
-class PSConstants
-{
-    public static function host()
-    {
-        return 'https://api.provesrc.com';
-    }
+define('PROVESRC_HOST', 'https://api.provesrc.com');
+define('PROVESRC_VERSION', '3.1.1');
+define('PROVESRC_OPTIONS_GROUP', 'provesrc_options');
 
-    public static function version()
-    {
-        return '3.0.5';
-    }
+// Current option keys
+define('PROVESRC_OPTION_API_KEY', 'provesrc_api_key');
+define('PROVESRC_OPTION_DEBUG_KEY', 'provesrc_debug');
+define('PROVESRC_OPTION_EVENTS_KEY', 'provesrc_events');
+define('PROVESRC_OPTION_TOS_KEY', 'provesrc_tos_accepted');
+define('PROVESRC_OPTION_ANALYTICS_KEY', 'provesrc_analytics_consent');
 
-    public static function options_group()
-    {
-        return 'provesrc_options';
-    }
-
-    public static function legacy_option_api_key()
-    {
-        return 'api_key';
-    }
-
-    public static function option_api_key()
-    {
-        return 'ps_api_key';
-    }
-
-    public static function option_debug_key()
-    {
-        return 'ps_debug';
-    }
-
-    public static function option_events_key()
-    {
-        return 'ps_events';
-    }
-}
+// Legacy option keys for backward compatibility
+define('PROVESRC_LEGACY_OPTION_API_KEY', 'api_key');
+define('PROVESRC_LEGACY2_OPTION_API_KEY', 'ps_api_key');
+define('PROVESRC_LEGACY_OPTION_DEBUG_KEY', 'ps_debug');
+define('PROVESRC_LEGACY_OPTION_EVENTS_KEY', 'ps_events');
+define('PROVESRC_LEGACY_OPTION_TOS_KEY', 'ps_tos_accepted');
+define('PROVESRC_LEGACY_OPTION_ANALYTICS_KEY', 'ps_analytics_consent');
 
 /* hooks */
 add_action('before_woocommerce_init', function () {
@@ -68,7 +49,7 @@ add_action('before_woocommerce_init', function () {
 });
 add_action('admin_menu', 'provesrc_admin_menu'); //1.5.0
 add_action('admin_init', 'provesrc_admin_init'); //2.5.0
-add_action('admin_notices', 'provesrc_admin_notice_html'); //3.1.0
+add_action('admin_notices', 'provesrc_admin_notice_html');
 add_action('wp_head', 'provesrc_inject_code'); //1.2.0
 
 // WooCommerce hooks
@@ -84,12 +65,19 @@ add_action('woocommerce_payment_complete', 'provesrc_woocommerce_hook_handler', 
 register_uninstall_hook(__FILE__, 'provesrc_uninstall_hook');
 register_activation_hook(__FILE__, 'provesrc_activation_hook');
 register_deactivation_hook(__FILE__, 'provesrc_deactivation_hook');
-add_action('update_option_' . PSConstants::option_api_key(), 'provesrc_api_key_updated', 999, 0);
-add_action('add_option_' . PSConstants::option_api_key(), 'provesrc_api_key_updated', 999, 0);
-add_action('update_option_' . PSConstants::option_events_key(), 'provesrc_hook_updated', 999, 3);
+add_action('update_option_' . PROVESRC_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('add_option_' . PROVESRC_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('update_option_' . PROVESRC_OPTION_EVENTS_KEY, 'provesrc_hook_updated', 999, 3);
 
-add_action('wp_ajax_import_last_30_orders', 'ps_import_last_30_orders');
-add_action('wp_ajax_download_debug_log', 'provesrc_download_debug_log');
+// Legacy option hooks for backward compatibility
+add_action('update_option_' . PROVESRC_LEGACY_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('add_option_' . PROVESRC_LEGACY_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('update_option_' . PROVESRC_LEGACY2_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('add_option_' . PROVESRC_LEGACY2_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
+add_action('update_option_' . PROVESRC_LEGACY_OPTION_EVENTS_KEY, 'provesrc_hook_updated', 999, 3);
+
+add_action('wp_ajax_provesrc_import_orders', 'provesrc_import_orders');
+add_action('wp_ajax_provesrc_debug_log', 'provesrc_debug_log');
 
 function provesrc_admin_menu()
 {
@@ -98,19 +86,83 @@ function provesrc_admin_menu()
 
 function provesrc_admin_init()
 {
-    wp_enqueue_style('provesrc_admin_style', plugin_dir_url(__FILE__) . 'style.css');
-    register_setting(PSConstants::options_group(), PSConstants::option_api_key());
-    register_setting(PSConstants::options_group(), PSConstants::legacy_option_api_key());
-    register_setting(PSConstants::options_group(), PSConstants::option_debug_key());
-    register_setting(PSConstants::options_group(), PSConstants::option_events_key());
-    wp_register_style('dashicons-provesrc', plugin_dir_url(__FILE__) . '/assets/css/dashicons-provesrc.css');
-    wp_enqueue_style('dashicons-provesrc');
+    wp_enqueue_style('provesrc_admin_style', plugin_dir_url(__FILE__) . 'style.css', array(), PROVESRC_VERSION);
+    // Register all settings first
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_API_KEY, array(
+        'type' => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_API_KEY, array(
+        'type' => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY2_OPTION_API_KEY, array(
+        'type' => 'string',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_DEBUG_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_EVENTS_KEY, array(
+        'type' => 'array',
+        'sanitize_callback' => 'provesrc_sanitize_events_array',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_TOS_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_ANALYTICS_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    
+    // Register legacy option keys for backward compatibility
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_DEBUG_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_EVENTS_KEY, array(
+        'type' => 'array',
+        'sanitize_callback' => 'provesrc_sanitize_events_array',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_TOS_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_ANALYTICS_KEY, array(
+        'type' => 'boolean',
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ));
+    wp_enqueue_style('dashicons-provesrc', plugin_dir_url(__FILE__) . '/assets/css/dashicons-provesrc.css', array(), PROVESRC_VERSION);
+    
+    // Run one-time migration AFTER all settings are registered
+    provesrc_run_one_time_migration();
 
-    if (isset($_POST['option_page']) && $_POST['option_page'] === PSConstants::options_group()) {
-        $optionKey = PSConstants::option_api_key();
+    if (isset($_POST['option_page']) && sanitize_text_field(wp_unslash($_POST['option_page'])) === PROVESRC_OPTIONS_GROUP) {
+        // Verify nonce for settings form submission
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), PROVESRC_OPTIONS_GROUP . '-options')) {
+            wp_die('Security check failed. Please try again.');
+        }
+        $optionKey = PROVESRC_OPTION_API_KEY;
         $apiKey = get_option($optionKey);
-        $submitted = $_POST[$optionKey];
-        if ($apiKey === $submitted) {
+        $submitted = isset($_POST[$optionKey]) ? sanitize_text_field(wp_unslash($_POST[$optionKey])) : '';
+        $tosKey = PROVESRC_OPTION_TOS_KEY;
+        $tosSubmitted = isset($_POST[$tosKey]) ? rest_sanitize_boolean(sanitize_text_field(wp_unslash($_POST[$tosKey]))) : false;
+        
+        // Terms of Service is always required, regardless of API key
+        if (!$tosSubmitted) {
+            add_settings_error(
+                $optionKey,
+                'tos_not_accepted',
+                'You must accept the Terms of Service to use ProveSource.',
+                'error'
+            );
+            return;
+        }
+
+        // Only run API key update if there's a valid API key
+        if ($apiKey === $submitted && !empty($submitted)) {
             provesrc_log('api key not changed, but running update');
             provesrc_api_key_updated();
         }
@@ -124,16 +176,20 @@ function provesrc_inject_code()
     // if(strpos($url, 'exclude1') > -1 || strpos($url, 'exclude2') > -1) {
     //     return;
     // }
-    $version = PSConstants::version();
+    $version = PROVESRC_VERSION;
     $apiKey = provesrc_get_api_key(); ?>
 
-    <!-- Start of Async ProveSource Code (Wordpress / Woocommerce v<?php echo $version; ?>) --><script>!function(o,i){window.provesrc&&window.console&&console.error&&console.error("ProveSource is included twice in this page."),provesrc=window.provesrc={dq:[],display:function(){this.dq.push(arguments)}},o._provesrcAsyncInit=function(){provesrc.init({apiKey:"<?php echo esc_html($apiKey); ?>",v:"0.0.4"})};var r=i.createElement("script");r.async=!0,r["ch"+"ar"+"set"]="UTF-8",r.src="https://cdn.provesrc.com/provesrc.js";var e=i.getElementsByTagName("script")[0];e.parentNode.insertBefore(r,e)}(window,document);</script><!-- End of Async ProveSource Code -->
+    <!-- Start of Async ProveSource Code (Wordpress / Woocommerce v<?php echo esc_html($version); ?>) --><script>!function(o,i){window.provesrc&&window.console&&console.error&&console.error("ProveSource is included twice in this page."),provesrc=window.provesrc={dq:[],display:function(){this.dq.push(arguments)}},o._provesrcAsyncInit=function(){provesrc.init({apiKey:"<?php echo esc_html($apiKey); ?>",v:"0.0.4"})};var r=i.createElement("script");r.async=!0,r["ch"+"ar"+"set"]="UTF-8",r.src="https://cdn.provesrc.com/provesrc.js";var e=i.getElementsByTagName("script")[0];e.parentNode.insertBefore(r,e)}(window,document);</script><!-- End of Async ProveSource Code -->
 <?php
 }
 
 function provesrc_woocommerce_hook_handler($arg1, $arg2 = null, $arg3 = null)
 {
-    $selectedEvents = get_option(PSConstants::option_events_key(), []);
+    $selectedEvents = provesrc_get_option_with_fallback(
+        PROVESRC_OPTION_EVENTS_KEY,
+        PROVESRC_LEGACY_OPTION_EVENTS_KEY,
+        []
+    );
     $currentEvent = current_filter();
     if (!$selectedEvents) {
         $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
@@ -200,15 +256,10 @@ function provesrc_uninstall_hook()
     if (!current_user_can('activate_plugins')) {
         return;
     }
-    $data = array(
-        'email' => get_option('admin_email'),
-        'siteUrl' => get_site_url(),
-        'siteName' => get_bloginfo('name'),
-        'description' => get_bloginfo('description'),
-        'woocommerce' => provesrc_has_woocommerce(),
-        'event' => 'uninstall',
-    );
-    return provesrc_send_request('/wp/uninstall', $data, true);
+    $apiKey = provesrc_get_api_key();
+    if (!$apiKey) {
+        return;
+    }
 }
 
 function provesrc_activation_hook()
@@ -216,15 +267,10 @@ function provesrc_activation_hook()
     if (!current_user_can('activate_plugins')) {
         return;
     }
-    $data = array(
-        'email' => get_option('admin_email'),
-        'siteUrl' => get_site_url(),
-        'siteName' => get_bloginfo('name'),
-        'description' => get_bloginfo('description'),
-        'woocommerce' => provesrc_has_woocommerce(),
-        'event' => 'activated',
-    );
-    return provesrc_send_request('/wp/state', $data, true);
+    $apiKey = provesrc_get_api_key();
+    if (!$apiKey) {
+        return;
+    }
 }
 
 function provesrc_deactivation_hook()
@@ -232,15 +278,10 @@ function provesrc_deactivation_hook()
     if (!current_user_can('activate_plugins')) {
         return;
     }
-    $data = array(
-        'email' => get_option('admin_email'),
-        'siteUrl' => get_site_url(),
-        'siteName' => get_bloginfo('name'),
-        'description' => get_bloginfo('description'),
-        'woocommerce' => provesrc_has_woocommerce(),
-        'event' => 'deactivated',
-    );
-    return provesrc_send_request('/wp/state', $data, true);
+    $apiKey = provesrc_get_api_key();
+    if (!$apiKey) {
+        return;
+    }
 }
 
 function provesrc_api_key_updated()
@@ -267,7 +308,6 @@ function provesrc_api_key_updated()
         $data = array(
             'secret' => 'simple-secret',
             'woocommerce' => provesrc_has_woocommerce(),
-            'email' => get_option('admin_email'),
             'siteUrl' => get_site_url(),
             'siteName' => get_bloginfo('name'),
             'multisite' => is_multisite(),
@@ -286,13 +326,13 @@ function provesrc_api_key_updated()
                 $error_message = 'unexpected error ' . $response_code;
             }
             provesrc_log('/wp/setup failed: ' . $error_message);
-            set_transient('ps_api_error', $error_message);
+            set_transient('provesrc_api_error', $error_message);
         } else {
             if (isset($response_data['successMessage'])) {
-                set_transient('ps_success_message', $response_data['successMessage']);
+                set_transient('provesrc_success_message', $response_data['successMessage']);
             }
             provesrc_log('/wp/setup complete: ' . $response_data['successMessage'] . $response_data['message']);
-            delete_transient('ps_api_error');
+            delete_transient('provesrc_api_error');
         }
     } catch (Exception $err) {
         provesrc_handle_error('failed updating api key', $err);
@@ -302,19 +342,25 @@ function provesrc_api_key_updated()
 function provesrc_hook_updated()
 {
     try {
+        $optionKey = PROVESRC_OPTION_EVENTS_KEY;
+        
+        // Verify nonce for events update
+        if (isset($_POST[$optionKey]) && (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), PROVESRC_OPTIONS_GROUP . '-options'))) {
+            provesrc_log('nonce verification failed for events update');
+            return;
+        }
+        
         $apiKey = provesrc_get_api_key();
         if ($apiKey == null) {
             provesrc_log('bad api key, selected events update not sent');
             return;
         }
-        $optionKey = PSConstants::option_events_key();
-        $selectedEvents = isset($_POST[$optionKey]) ? array_map('sanitize_text_field', $_POST[$optionKey]) : [];
+        $selectedEvents = isset($_POST[$optionKey]) ? array_map('sanitize_text_field', wp_unslash($_POST[$optionKey])) : [];
         update_option($optionKey, $selectedEvents);
 
         $data = array(
             'secret' => 'simple-secret',
             'woocommerce' => provesrc_has_woocommerce(),
-            'email' => get_option('admin_email'),
             'siteUrl' => get_site_url(),
             'siteName' => get_bloginfo('name'),
             'multisite' => is_multisite(),
@@ -331,6 +377,89 @@ function provesrc_hook_updated()
 /** hooks - END */
 
 /** helpers */
+
+function provesrc_run_one_time_migration()
+{
+    // Check if migration has already been completed
+    $migration_completed = get_option('provesrc_migration_3_1_0_completed', false);
+    if ($migration_completed) {
+        return; // Migration already done
+    }
+    
+    // Only run for users who can manage options (admin_init already ensures admin context)
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+    
+    $migrations_performed = [];
+    
+    // Migrate API key
+    $current_api_key = get_option(PROVESRC_OPTION_API_KEY);
+    if (!provesrc_isvalid_api_key($current_api_key)) {
+        // Check legacy2 key first (ps_api_key)
+        $legacy2_key = get_option(PROVESRC_LEGACY2_OPTION_API_KEY);
+        if (provesrc_isvalid_api_key($legacy2_key)) {
+            update_option(PROVESRC_OPTION_API_KEY, $legacy2_key);
+            $migrations_performed[] = PROVESRC_LEGACY2_OPTION_API_KEY . ' -> ' . PROVESRC_OPTION_API_KEY;
+        } else {
+            // Check oldest legacy key (api_key)
+            $legacy_key = get_option(PROVESRC_LEGACY_OPTION_API_KEY);
+            if (provesrc_isvalid_api_key($legacy_key)) {
+                update_option(PROVESRC_OPTION_API_KEY, $legacy_key);
+                $migrations_performed[] = PROVESRC_LEGACY_OPTION_API_KEY . ' -> ' . PROVESRC_OPTION_API_KEY;
+            }
+        }
+    }
+    
+    // Migrate other options
+    $option_migrations = [
+        [PROVESRC_LEGACY_OPTION_DEBUG_KEY, PROVESRC_OPTION_DEBUG_KEY],
+        [PROVESRC_LEGACY_OPTION_EVENTS_KEY, PROVESRC_OPTION_EVENTS_KEY],
+        [PROVESRC_LEGACY_OPTION_TOS_KEY, PROVESRC_OPTION_TOS_KEY],
+        [PROVESRC_LEGACY_OPTION_ANALYTICS_KEY, PROVESRC_OPTION_ANALYTICS_KEY],
+    ];
+    
+    foreach ($option_migrations as $migration) {
+        $old_key = $migration[0];
+        $new_key = $migration[1];
+        
+        // Only migrate if new option doesn't exist but old one does
+        $new_value = get_option($new_key, null);
+        if ($new_value === null) {
+            $old_value = get_option($old_key, null);
+            if ($old_value !== null) {
+                update_option($new_key, $old_value);
+                $migrations_performed[] = $old_key . ' -> ' . $new_key;
+            }
+        }
+    }
+    
+    // Mark migration as completed
+    update_option('provesrc_migration_3_1_0_completed', true);
+    
+    if (!empty($migrations_performed)) {
+        provesrc_log('One-time migration completed. Migrated: ' . implode(', ', $migrations_performed));
+    } else {
+        provesrc_log('One-time migration completed. No migrations needed.');
+    }
+}
+
+function provesrc_get_option_with_fallback($new_key, $old_key, $default = false)
+{
+    // Try new option first
+    $value = get_option($new_key, null);
+    if ($value !== null) {
+        return $value;
+    }
+    
+    // Fall back to old option (migration happens separately on admin_init)
+    $old_value = get_option($old_key, null);
+    if ($old_value !== null) {
+        return $old_value;
+    }
+    
+    return $default;
+}
 
 function provesrc_send_webhook($order)
 {
@@ -458,11 +587,11 @@ function provesrc_send_error($message, $err, $data = null)
         $apiKey = provesrc_get_api_key();
         $headers = array(
             'Content-Type' => 'application/json',
-            'x-plugin-version' => PSConstants::version(),
+            'x-plugin-version' => PROVESRC_VERSION,
             'x-site-url' => get_site_url(),
             'Authorization' => "Bearer $apiKey"
         );
-        return wp_remote_post(PSConstants::host() . '/webhooks/wp-error', array(
+        return wp_remote_post(PROVESRC_HOST . '/webhooks/wp-error', array(
             'headers' => $headers,
             'body' => json_encode($payload),
         ));
@@ -476,7 +605,7 @@ function provesrc_send_request($path, $data, $ignoreAuth = false)
     try {
         $headers = array(
             'Content-Type' => 'application/json',
-            'x-plugin-version' => PSConstants::version(),
+            'x-plugin-version' => PROVESRC_VERSION,
             'x-site-url' => get_site_url(),
             'x-wp-version' => get_bloginfo('version'),
         );
@@ -492,7 +621,7 @@ function provesrc_send_request($path, $data, $ignoreAuth = false)
             $headers['x-woo-version'] = WC()->version;
         }
 
-        $url = PSConstants::host() . $path;
+        $url = PROVESRC_HOST . $path;
         $data = array(
             'headers' => $headers,
             'body' => json_encode($data),
@@ -514,20 +643,52 @@ function provesrc_handle_error($message, $err, $data = null)
 
 function provesrc_get_api_key()
 {
-    $legacyKey = get_option(PSConstants::legacy_option_api_key());
-    if (provesrc_isvalid_api_key($legacyKey)) {
-        return $legacyKey;
-    }
-    $apiKey = get_option(PSConstants::option_api_key());
+    // Check current key first
+    $apiKey = get_option(PROVESRC_OPTION_API_KEY);
     if (provesrc_isvalid_api_key($apiKey)) {
         return $apiKey;
     }
+    
+    // Check legacy2 key (ps_api_key) - more recent legacy
+    $legacy2Key = get_option(PROVESRC_LEGACY2_OPTION_API_KEY);
+    if (provesrc_isvalid_api_key($legacy2Key)) {
+        return $legacy2Key;
+    }
+    
+    // Check legacy key (api_key) - oldest legacy
+    $legacyKey = get_option(PROVESRC_LEGACY_OPTION_API_KEY);
+    if (provesrc_isvalid_api_key($legacyKey)) {
+        return $legacyKey;
+    }
+    
     return null;
 }
 
 function provesrc_get_debug()
 {
-    return get_option(PSConstants::option_debug_key());
+    return provesrc_get_option_with_fallback(
+        PROVESRC_OPTION_DEBUG_KEY,
+        PROVESRC_LEGACY_OPTION_DEBUG_KEY,
+        false
+    );
+}
+
+function provesrc_get_tos_accepted()
+{
+    return provesrc_get_option_with_fallback(
+        PROVESRC_OPTION_TOS_KEY,
+        PROVESRC_LEGACY_OPTION_TOS_KEY,
+        false
+    );
+}
+
+function provesrc_get_analytics_consent()
+{
+    return provesrc_get_option_with_fallback(
+        PROVESRC_OPTION_ANALYTICS_KEY,
+        PROVESRC_LEGACY_OPTION_ANALYTICS_KEY,
+        false
+    );
 }
 
 function provesrc_isvalid_api_key($apiKey)
@@ -549,31 +710,31 @@ function provesrc_get_ips()
 {
     $ips = [];
     if (isset($_SERVER['HTTP_CLIENT_IP'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_CLIENT_IP'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_CLIENT_IP']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_X_FORWARDED_FOR'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['HTTP_X_FORWARDED'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_X_FORWARDED'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_X_FORWARDED']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['HTTP_FORWARDED_FOR'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_FORWARDED_FOR'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_FORWARDED_FOR']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['HTTP_FORWARDED'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_FORWARDED'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_FORWARDED']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['REMOTE_ADDR'])) {
-        array_push($ips, filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['REMOTE_ADDR']), FILTER_VALIDATE_IP));
     } else if (isset($_SERVER['HTTP_X_REAL_IP'])) {
-        array_push($ips, filter_var($_SERVER['HTTP_X_REAL_IP'], FILTER_VALIDATE_IP));
+        array_push($ips, filter_var(wp_unslash($_SERVER['HTTP_X_REAL_IP']), FILTER_VALIDATE_IP));
     }
     return $ips;
 }
 
-function ps_import_last_30_orders()
+function provesrc_import_orders()
 {
-    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'import_orders_nonce')) {
+    if (!isset($_POST['security']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['security'])), 'provesrc_import_orders_nonce')) {
         wp_send_json_error('Invalid request');
         return;
     }
 
-    $transient_key = 'last_import_time';
+    $transient_key = 'provesrc_last_import_time';
     $rate_limit_seconds = 60;
     $last_import_time = get_transient($transient_key);
     if ($last_import_time) {
@@ -600,7 +761,6 @@ function ps_import_last_30_orders()
     $data = array(
         'secret' => 'simple-secret',
         'woocommerce' => provesrc_has_woocommerce(),
-        'email' => get_option('admin_email'),
         'siteUrl' => get_site_url(),
         'siteName' => get_bloginfo('name'),
         'multisite' => is_multisite(),
@@ -629,9 +789,9 @@ function ps_import_last_30_orders()
     }
 }
 
-function provesrc_download_debug_log()
+function provesrc_debug_log()
 {
-    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'download_debug_log_nonce')) {
+    if (!isset($_POST['security']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['security'])), 'provesrc_debug_log_nonce')) {
         wp_send_json_error('Invalid request');
         return;
     }
@@ -664,7 +824,12 @@ function provesrc_admin_menu_page_html()
     }
 
     $apiKey = provesrc_get_api_key(); 
-    $selectedEvents = get_option(PSConstants::option_events_key(), []);
+    $selectedEvents = provesrc_get_option_with_fallback(
+        PROVESRC_OPTION_EVENTS_KEY,
+        PROVESRC_LEGACY_OPTION_EVENTS_KEY,
+        []
+    );
+    $tosAccepted = $apiKey ? true : provesrc_get_tos_accepted();
     if (!$selectedEvents) {
         $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
     }
@@ -681,14 +846,14 @@ function provesrc_admin_menu_page_html()
     ?>
 
     <div class="wrap" id="ps-settings">
-        <!-- <h1><?= esc_html(get_admin_page_title()); ?></h1> -->
+        <!-- <h1><?php esc_html(get_admin_page_title()); ?></h1> -->
         <a href="https://provesrc.com">
-            <img class="top-logo" src="<?php echo plugin_dir_url(__FILE__) . 'assets/top-logo.png'; ?>">
+            <img class="top-logo" src="<?php echo esc_url(plugin_dir_url(__FILE__) . 'assets/top-logo.png'); ?>">
         </a>
         <form action="options.php" method="post">
             <?php
-            settings_fields(PSConstants::options_group());
-            do_settings_sections(PSConstants::options_group());
+            settings_fields(PROVESRC_OPTIONS_GROUP);
+            do_settings_sections(PROVESRC_OPTIONS_GROUP);
             ?>
             <div class="ps-settings-container">
                 <?php if ($apiKey != null) { ?>
@@ -701,18 +866,18 @@ function provesrc_admin_menu_page_html()
                     <div class="ps-red-warning">Add your API Key below</div>
                     <div class="account-link">If you don't have an account - <a href="https://console.provesrc.com/?utm_source=woocommerce&utm_medium=plugin&utm_campaign=woocommerce-signup#/signup" target="_blank">signup here!</a></div>
                 <?php } ?>
-                <div class="label">Your API Key:</div>
-                    <input type="text" class="ps-apikey" placeholder="required" name="<?php echo PSConstants::option_api_key(); ?>" value="<?php echo esc_attr($apiKey); ?>" />
+                <div class="label">Your API Key: <span style="color: #dc3232;">*</span></div>
+                    <input type="text" class="ps-apikey" placeholder="required" name="<?php echo esc_attr(PROVESRC_OPTION_API_KEY); ?>" value="<?php echo esc_attr($apiKey); ?>" />
                 <div class="m-t"><a href="https://console.provesrc.com/#/settings" target="_blank">Where is my API Key?</a></div>
                 <?php if (provesrc_has_woocommerce()) { ?>
                     <div class="m-t-2">
-                        <label class="strong" for="woo_events">WooCommerce Events</label>
+                        <label class="strong" for="woo_events">WooCommerce Events <span style="color: #dc3232;">*</span></label>
                         <p class="description">Select which WooCommerce order/checkout events ProveSource will track:</p>
                         <?php foreach ($woocommerce_hooks as $hook_value => $hook_label) { 
                             $isChecked = in_array($hook_value, (array) $selectedEvents);
                             ?>
                             <input id="woo_events" type="checkbox" 
-                                name="<?php echo PSConstants::option_events_key() . '[]'; ?>" 
+                                name="<?php echo esc_attr(PROVESRC_OPTION_EVENTS_KEY . '[]'); ?>" 
                                 value="<?php echo esc_attr($hook_value); ?>"
                                 <?php checked($isChecked); ?> >
                                 <?php echo esc_html($hook_label); ?>
@@ -731,7 +896,7 @@ function provesrc_admin_menu_page_html()
                         </div>
                         <div class="d-inline-block ps-toggle" style="float: left;margin-top:8px; margin-left:10px">
                             <input type="checkbox" class="ps-toggle-checkbox" id="ps-toggle" tabindex="0"
-                                name="<?php echo PSConstants::option_debug_key(); ?>" <?php if (provesrc_get_debug()) { echo "checked"; } ?>>
+                                name="<?php echo esc_attr(PROVESRC_OPTION_DEBUG_KEY); ?>" <?php if (provesrc_get_debug()) { echo "checked"; } ?>>
                             <label class="ps-toggle-label" for="ps-toggle"></label>
                         </div>
                     </div>
@@ -744,8 +909,8 @@ function provesrc_admin_menu_page_html()
                                 url: ajaxurl,
                                 type: 'POST',
                                 data: {
-                                    action: 'download_debug_log',
-                                    security: '<?php echo wp_create_nonce("download_debug_log_nonce"); ?>'
+                                    action: 'provesrc_debug_log',
+                                    security: '<?php echo esc_js(wp_create_nonce("provesrc_debug_log_nonce")); ?>'
                                 },
                                 success: function(response) {
                                     if (response.success) {
@@ -772,13 +937,89 @@ function provesrc_admin_menu_page_html()
                     });
                 </script>
             </div>
+            <div class="m-t-2">
+                <label>
+                    <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_ANALYTICS_KEY); ?>" value="1" <?php checked(provesrc_get_analytics_consent()); ?> id="analytics_checkbox">
+                    Allow analytics data about plugin activity and website data (optional)
+                </label>
+            </div>
+            <div class="m-t-1">
+                <label>
+                    <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_TOS_KEY); ?>" value="1" <?php checked($tosAccepted); ?> required id="tos_checkbox">
+                    By using the ProveSource plugin, you agree to our <a href="https://provesrc.com/terms/" target="_blank">Terms of Service</a><span style="color: #dc3232;"> *</span><br>
+                    <span style="margin-left: 23px; font-size: 0.9em;">(ProveSource will add provesrc.js to your website and automatically retrieve website name, description, URL and recent orders for initial setup).</span>
+                </label>
+            </div>
+            <style>
+                .ps-spinner {
+                    display: inline-block;
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid #f3f3f3;
+                    border-top: 2px solid #0073aa;
+                    border-radius: 50%;
+                    animation: ps-spin 1s linear infinite;
+                    margin-right: 8px;
+                }
+                @keyframes ps-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                .ps-loading {
+                    opacity: 0.6;
+                    pointer-events: none;
+                }
+            </style>
+            <script type="text/javascript">
+                jQuery(document).ready(function($) {
+                    function toggleButtons() {
+                        var tosChecked = $('#tos_checkbox').is(':checked');
+                        var apiKey = $('[name="<?php echo esc_js(PROVESRC_OPTION_API_KEY); ?>"]').val();
+                        
+                        // Save button is enabled if Terms of Service is checked (API key is optional)
+                        if (tosChecked) {
+                            $('#submit').prop('disabled', false);
+                        } else {
+                            $('#submit').prop('disabled', true);
+                        }
+                        
+                        // Import button is only enabled if API key is valid
+                        if (apiKey && tosChecked) {
+                            $('#import_orders_button').prop('disabled', <?php echo esc_js(!provesrc_isvalid_api_key($apiKey) ? 'true' : 'false'); ?>);
+                        } else {
+                            $('#import_orders_button').prop('disabled', true);
+                        }
+                    }
+
+                    // Add loading state to Save button
+                    $('form').on('submit', function() {
+                        var $submitBtn = $('#submit');
+                        var originalText = $submitBtn.val();
+                        
+                        $submitBtn.addClass('ps-loading');
+                        $submitBtn.val('Saving...');
+                        $submitBtn.prepend('<span class="ps-spinner"></span>');
+                        
+                        // Re-enable after a delay in case of errors
+                        setTimeout(function() {
+                            $submitBtn.removeClass('ps-loading');
+                            $submitBtn.val(originalText);
+                            $submitBtn.find('.ps-spinner').remove();
+                        }, 10000);
+                    });
+
+                    $('#tos_checkbox').on('change', toggleButtons);
+                    $('[name="<?php echo esc_html(PROVESRC_OPTION_API_KEY); ?>"]').on('input', toggleButtons);
+                    toggleButtons();
+                });
+            </script>
             <div style="display:flex; align-items:center">
                 <div>
                     <?php submit_button('Save'); ?>
                 </div>
                 <div style="margin-top:7px; margin-left:20px; font-weight: bold">
                     <button
-                        <?php echo !provesrc_isvalid_api_key($apiKey) ? 'disabled' : ''; ?>
+                        <?php echo esc_attr(!provesrc_isvalid_api_key($apiKey) ? 'disabled' : ''); ?>
                         type="button"
                         id="import_orders_button"
                         style=" padding-top:3px; padding-bottom:3px; background-color:#7825f3; border:none"
@@ -788,14 +1029,29 @@ function provesrc_admin_menu_page_html()
                     <script type="text/javascript">
                         jQuery(document).ready(function($) {
                             $('#import_orders_button').on('click', function() {
+                                var $btn = $(this);
+                                var originalText = $btn.text();
+                                
+                                // Add loading state
+                                $btn.addClass('ps-loading');
+                                $btn.prop('disabled', true);
+                                $btn.text('Importing...');
+                                $btn.prepend('<span class="ps-spinner"></span>');
+                                
                                 $.ajax({
                                     url: ajaxurl,
                                     type: 'POST',
                                     data: {
-                                        action: 'import_last_30_orders',
-                                        security: '<?php echo wp_create_nonce("import_orders_nonce"); ?>'
+                                        action: 'provesrc_import_orders',
+                                        security: '<?php echo esc_js(wp_create_nonce("provesrc_import_orders_nonce")); ?>'
                                     },
                                     success: function(response) {
+                                        // Remove loading state
+                                        $btn.removeClass('ps-loading');
+                                        $btn.prop('disabled', false);
+                                        $btn.text(originalText);
+                                        $btn.find('.ps-spinner').remove();
+                                        
                                         if (response.success) {
                                             alert('Orders imported successfully!');
                                         } else {
@@ -803,6 +1059,12 @@ function provesrc_admin_menu_page_html()
                                         }
                                     },
                                     error: function(xhr, status, error) {
+                                        // Remove loading state
+                                        $btn.removeClass('ps-loading');
+                                        $btn.prop('disabled', false);
+                                        $btn.text(originalText);
+                                        $btn.find('.ps-spinner').remove();
+                                        
                                         if (xhr.responseJSON && xhr.responseJSON.data) {
                                             alert(xhr.responseJSON.data);
                                         } else {
@@ -816,6 +1078,7 @@ function provesrc_admin_menu_page_html()
                 </div>
             </div>
         </form>
+        <p class="ps-version-text">ProveSource WordPress Plugin v<?php echo esc_html(PROVESRC_VERSION); ?></p>
     </div>
 
 <?php
@@ -823,8 +1086,8 @@ function provesrc_admin_menu_page_html()
 function provesrc_admin_notice_html()
 {
     $apiKey = provesrc_get_api_key();
-    $error_message = get_transient('ps_api_error');
-    $success_message = get_transient('ps_success_message');
+    $error_message = get_transient('provesrc_api_error');
+    $success_message = get_transient('provesrc_success_message');
 
     if ($apiKey != null && !$error_message && !$success_message) {
         return;
@@ -834,7 +1097,7 @@ function provesrc_admin_notice_html()
     // if($screen !== null && strpos($screen->id, 'provesrc') > 0) return;
 
 ?>
-    <div class="notice is-dismissible <?php echo $success_message ? 'notice-success' : 'notice-error'; ?>">
+    <div class="notice is-dismissible <?php echo esc_attr($success_message ? 'notice-success' : 'notice-error'); ?>">
         <?php if ($apiKey == null): ?>
             <p class="ps-error">ProveSource is not configured! <a href="admin.php?page=provesrc">Click here</a> to set up your API key.</p>
         <?php elseif ($error_message): ?>
@@ -845,7 +1108,7 @@ function provesrc_admin_notice_html()
     </div>
 <?php
     if ($success_message) {
-        delete_transient('ps_success_message');
+        delete_transient('provesrc_success_message');
     }
 }
 
@@ -887,6 +1150,40 @@ function provesrc_encode_exception($err)
         'file' => $err->getFile() . ':' . $err->getLine(),
         'trace' => substr($err->getTraceAsString(), 0, 500),
     ];
+}
+
+/**
+ * Sanitization callback for events array field
+ * @param mixed $value The value to sanitize
+ * @return array Sanitized array of event names
+ */
+function provesrc_sanitize_events_array($value)
+{
+    if (!is_array($value)) {
+        return array();
+    }
+    
+    // Define allowed event names for validation
+    $allowed_events = array(
+        'woocommerce_order_status_completed',
+        'woocommerce_order_status_pending',
+        'woocommerce_order_status_processing',
+        'woocommerce_checkout_create_order',
+        'woocommerce_checkout_order_processed',
+        'woocommerce_payment_complete',
+        'woocommerce_thankyou',
+        'woocommerce_new_order'
+    );
+    
+    $sanitized = array();
+    for ($i = 0; $i < count($value); $i++) {
+        $event = sanitize_key($value[$i]);
+        if (in_array($event, $allowed_events)) {
+            $sanitized[] = $event;
+        }
+    }
+    
+    return $sanitized;
 }
 
 /* helpers - END */
