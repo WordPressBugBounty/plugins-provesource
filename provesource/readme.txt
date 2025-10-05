@@ -5,7 +5,7 @@ Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
 Requires PHP: 5.2
 Requires at least: 3.0
 Tested up to: 6.8
-Stable tag: 3.1.1
+Stable tag: 3.1.2
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -108,6 +108,7 @@ This service is provided by Configo LTD: [terms of service](https://provesrc.com
 
 = 3.1.x =
 Updated admin options for WP plugin guideline compatability
+Update screenshots
 
 = 3.0.x =
 Add woocommerce event selector (multi select)

@@ -7,7 +7,7 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 3.1.1
+ * Version: 3.1.2
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 /** constants */
 define('PROVESRC_HOST', 'https://api.provesrc.com');
-define('PROVESRC_VERSION', '3.1.1');
+define('PROVESRC_VERSION', '3.1.2');
 define('PROVESRC_OPTIONS_GROUP', 'provesrc_options');
 
 // Current option keys
