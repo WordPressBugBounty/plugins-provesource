@@ -7,7 +7,7 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 3.1.2
+ * Version: 4.0.0
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
@@ -23,23 +23,15 @@ if (!defined('ABSPATH')) {
 
 /** constants */
 define('PROVESRC_HOST', 'https://api.provesrc.com');
-define('PROVESRC_VERSION', '3.1.2');
+define('PROVESRC_VERSION', '4.0.0');
 define('PROVESRC_OPTIONS_GROUP', 'provesrc_options');
 
-// Current option keys
 define('PROVESRC_OPTION_API_KEY', 'provesrc_api_key');
+define('PROVESRC_OPTION_WEBHOOK_SECRET', 'provesrc_webhook_secret');
 define('PROVESRC_OPTION_DEBUG_KEY', 'provesrc_debug');
 define('PROVESRC_OPTION_EVENTS_KEY', 'provesrc_events');
 define('PROVESRC_OPTION_TOS_KEY', 'provesrc_tos_accepted');
 define('PROVESRC_OPTION_ANALYTICS_KEY', 'provesrc_analytics_consent');
-
-// Legacy option keys for backward compatibility
-define('PROVESRC_LEGACY_OPTION_API_KEY', 'api_key');
-define('PROVESRC_LEGACY2_OPTION_API_KEY', 'ps_api_key');
-define('PROVESRC_LEGACY_OPTION_DEBUG_KEY', 'ps_debug');
-define('PROVESRC_LEGACY_OPTION_EVENTS_KEY', 'ps_events');
-define('PROVESRC_LEGACY_OPTION_TOS_KEY', 'ps_tos_accepted');
-define('PROVESRC_LEGACY_OPTION_ANALYTICS_KEY', 'ps_analytics_consent');
 
 /* hooks */
 add_action('before_woocommerce_init', function () {
@@ -65,16 +57,6 @@ add_action('woocommerce_payment_complete', 'provesrc_woocommerce_hook_handler', 
 register_uninstall_hook(__FILE__, 'provesrc_uninstall_hook');
 register_activation_hook(__FILE__, 'provesrc_activation_hook');
 register_deactivation_hook(__FILE__, 'provesrc_deactivation_hook');
-add_action('update_option_' . PROVESRC_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('add_option_' . PROVESRC_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('update_option_' . PROVESRC_OPTION_EVENTS_KEY, 'provesrc_hook_updated', 999, 3);
-
-// Legacy option hooks for backward compatibility
-add_action('update_option_' . PROVESRC_LEGACY_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('add_option_' . PROVESRC_LEGACY_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('update_option_' . PROVESRC_LEGACY2_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('add_option_' . PROVESRC_LEGACY2_OPTION_API_KEY, 'provesrc_api_key_updated', 999, 0);
-add_action('update_option_' . PROVESRC_LEGACY_OPTION_EVENTS_KEY, 'provesrc_hook_updated', 999, 3);
 
 add_action('wp_ajax_provesrc_import_orders', 'provesrc_import_orders');
 add_action('wp_ajax_provesrc_debug_log', 'provesrc_debug_log');
@@ -92,11 +74,7 @@ function provesrc_admin_init()
         'type' => 'string',
         'sanitize_callback' => 'sanitize_text_field',
     ));
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_API_KEY, array(
-        'type' => 'string',
-        'sanitize_callback' => 'sanitize_text_field',
-    ));
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY2_OPTION_API_KEY, array(
+    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_OPTION_WEBHOOK_SECRET, array(
         'type' => 'string',
         'sanitize_callback' => 'sanitize_text_field',
     ));
@@ -116,44 +94,24 @@ function provesrc_admin_init()
         'type' => 'boolean',
         'sanitize_callback' => 'rest_sanitize_boolean',
     ));
-    
-    // Register legacy option keys for backward compatibility
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_DEBUG_KEY, array(
-        'type' => 'boolean',
-        'sanitize_callback' => 'rest_sanitize_boolean',
-    ));
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_EVENTS_KEY, array(
-        'type' => 'array',
-        'sanitize_callback' => 'provesrc_sanitize_events_array',
-    ));
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_TOS_KEY, array(
-        'type' => 'boolean',
-        'sanitize_callback' => 'rest_sanitize_boolean',
-    ));
-    register_setting(PROVESRC_OPTIONS_GROUP, PROVESRC_LEGACY_OPTION_ANALYTICS_KEY, array(
-        'type' => 'boolean',
-        'sanitize_callback' => 'rest_sanitize_boolean',
-    ));
     wp_enqueue_style('dashicons-provesrc', plugin_dir_url(__FILE__) . '/assets/css/dashicons-provesrc.css', array(), PROVESRC_VERSION);
-    
-    // Run one-time migration AFTER all settings are registered
-    provesrc_run_one_time_migration();
 
     if (isset($_POST['option_page']) && sanitize_text_field(wp_unslash($_POST['option_page'])) === PROVESRC_OPTIONS_GROUP) {
         // Verify nonce for settings form submission
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), PROVESRC_OPTIONS_GROUP . '-options')) {
             wp_die('Security check failed. Please try again.');
         }
-        $optionKey = PROVESRC_OPTION_API_KEY;
-        $apiKey = get_option($optionKey);
-        $submitted = isset($_POST[$optionKey]) ? sanitize_text_field(wp_unslash($_POST[$optionKey])) : '';
-        $tosKey = PROVESRC_OPTION_TOS_KEY;
-        $tosSubmitted = isset($_POST[$tosKey]) ? rest_sanitize_boolean(sanitize_text_field(wp_unslash($_POST[$tosKey]))) : false;
         
-        // Terms of Service is always required, regardless of API key
+        // Get submitted values
+        $newApiKey = isset($_POST[PROVESRC_OPTION_API_KEY]) ? sanitize_text_field(wp_unslash($_POST[PROVESRC_OPTION_API_KEY])) : '';
+        $newWebhookSecret = isset($_POST[PROVESRC_OPTION_WEBHOOK_SECRET]) ? sanitize_text_field(wp_unslash($_POST[PROVESRC_OPTION_WEBHOOK_SECRET])) : '';
+        $newEventsSubmitted = isset($_POST[PROVESRC_OPTION_EVENTS_KEY]) ? array_map('sanitize_text_field', wp_unslash($_POST[PROVESRC_OPTION_EVENTS_KEY])) : array();
+        $tosSubmitted = isset($_POST[PROVESRC_OPTION_TOS_KEY]) ? rest_sanitize_boolean(sanitize_text_field(wp_unslash($_POST[PROVESRC_OPTION_TOS_KEY]))) : false;
+        
+        // Terms of Service is always required
         if (!$tosSubmitted) {
             add_settings_error(
-                $optionKey,
+                PROVESRC_OPTION_API_KEY,
                 'tos_not_accepted',
                 'You must accept the Terms of Service to use ProveSource.',
                 'error'
@@ -161,11 +119,16 @@ function provesrc_admin_init()
             return;
         }
 
-        // Only run API key update if there's a valid API key
-        if ($apiKey === $submitted && !empty($submitted)) {
-            provesrc_log('api key not changed, but running update');
-            provesrc_api_key_updated();
+        // Only proceed if we have both API key and webhook secret
+        if (empty($newApiKey) || empty($newWebhookSecret)) {
+            return;
         }
+
+        // Get previous values before WordPress saves the new ones
+        $previousApiKey = provesrc_get_api_key();
+        $previousWebhookSecret = provesrc_get_webhook_secret();
+        $sendOrders = $previousApiKey !== $newApiKey || $previousWebhookSecret !== $newWebhookSecret;
+        provesrc_api_key_updated($newApiKey, $newWebhookSecret, $sendOrders, $newEventsSubmitted);
     }
 }
 
@@ -185,11 +148,7 @@ function provesrc_inject_code()
 
 function provesrc_woocommerce_hook_handler($arg1, $arg2 = null, $arg3 = null)
 {
-    $selectedEvents = provesrc_get_option_with_fallback(
-        PROVESRC_OPTION_EVENTS_KEY,
-        PROVESRC_LEGACY_OPTION_EVENTS_KEY,
-        []
-    );
+    $selectedEvents = get_option(PROVESRC_OPTION_EVENTS_KEY, array());
     $currentEvent = current_filter();
     if (!$selectedEvents) {
         $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
@@ -284,27 +243,33 @@ function provesrc_deactivation_hook()
     }
 }
 
-function provesrc_api_key_updated()
+function provesrc_api_key_updated($apiKey = null, $webhookSecret = null, $sendOrders = true, $selectedEvents = null)
 {
     try {
-        $apiKey = provesrc_get_api_key();
-        if ($apiKey == null) {
-            provesrc_log('bad api key update');
-            return;
-        }
-        provesrc_log('api key updated');
+        // Clear previous transients before making request
+        delete_transient('provesrc_api_error');
+        delete_transient('provesrc_success_message');
 
-        $orders = [];
-        if (provesrc_has_woocommerce()) {
-            $wcOrders = wc_get_orders(array(
-                'limit' => 30,
-                'orderby' => 'date',
-                'order' => 'DESC'
-            ));
-            foreach ($wcOrders as $wco) {
-                array_push($orders, provesrc_get_order_payload($wco, false));
-            }
+        // Use provided values or fetch from database
+        if ($apiKey === null) {
+            $apiKey = provesrc_get_api_key();
         }
+        if ($webhookSecret === null) {
+            $webhookSecret = provesrc_get_webhook_secret();
+        }
+        if ($selectedEvents === null) {
+            $selectedEvents = get_option(PROVESRC_OPTION_EVENTS_KEY, array());
+        }
+        
+        if ($apiKey == null) {
+            provesrc_log('bad api key, settings update not sent');
+            return array('success' => false, 'error' => 'Invalid API key');
+        }
+        if ($webhookSecret == null) {
+            provesrc_log('bad webhook secret, settings update not sent');
+            return array('success' => false, 'error' => 'Invalid webhook secret');
+        }
+
         $data = array(
             'secret' => 'simple-secret',
             'woocommerce' => provesrc_has_woocommerce(),
@@ -312,10 +277,25 @@ function provesrc_api_key_updated()
             'siteName' => get_bloginfo('name'),
             'multisite' => is_multisite(),
             'description' => get_bloginfo('description'),
-            'orders' => $orders
         );
-        provesrc_log('sending setup data ' . '(' . count($orders) . ' orders)');
-        $res = provesrc_send_request('/wp/setup', $data);
+        if ($sendOrders) {
+            $orders = array();
+            if (provesrc_has_woocommerce()) {
+                $wcOrders = wc_get_orders(array(
+                    'limit' => 30,
+                    'orderby' => 'date',
+                    'order' => 'DESC'
+                ));
+                for ($i = 0; $i < count($wcOrders); $i++) {
+                    $orders[] = provesrc_get_order_payload($wcOrders[$i], false);
+                }
+            }
+            $data['orders'] = $orders;
+        }
+
+        $data['selectedEvents'] = $selectedEvents;
+
+        $res = provesrc_send_request('/wp/setup', $data, false, $apiKey, $webhookSecret);
         $response_code = wp_remote_retrieve_response_code($res);
         $response_body = wp_remote_retrieve_body($res);
         $response_data = json_decode($response_body, true);
@@ -327,139 +307,22 @@ function provesrc_api_key_updated()
             }
             provesrc_log('/wp/setup failed: ' . $error_message);
             set_transient('provesrc_api_error', $error_message);
+            return array('success' => false, 'error' => $error_message, 'response_code' => $response_code);
         } else {
-            if (isset($response_data['successMessage'])) {
-                set_transient('provesrc_success_message', $response_data['successMessage']);
-            }
-            provesrc_log('/wp/setup complete: ' . $response_data['successMessage'] . $response_data['message']);
-            delete_transient('provesrc_api_error');
+            $success_message = isset($response_data['successMessage']) ? $response_data['successMessage'] : 'Setup completed successfully';
+            set_transient('provesrc_success_message', $success_message);
+            provesrc_log('/wp/setup complete');
+            return array('success' => true, 'message' => $success_message);
         }
     } catch (Exception $err) {
-        provesrc_handle_error('failed updating api key', $err);
-    }
-}
-
-function provesrc_hook_updated()
-{
-    try {
-        $optionKey = PROVESRC_OPTION_EVENTS_KEY;
-        
-        // Verify nonce for events update
-        if (isset($_POST[$optionKey]) && (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), PROVESRC_OPTIONS_GROUP . '-options'))) {
-            provesrc_log('nonce verification failed for events update');
-            return;
-        }
-        
-        $apiKey = provesrc_get_api_key();
-        if ($apiKey == null) {
-            provesrc_log('bad api key, selected events update not sent');
-            return;
-        }
-        $selectedEvents = isset($_POST[$optionKey]) ? array_map('sanitize_text_field', wp_unslash($_POST[$optionKey])) : [];
-        update_option($optionKey, $selectedEvents);
-
-        $data = array(
-            'secret' => 'simple-secret',
-            'woocommerce' => provesrc_has_woocommerce(),
-            'siteUrl' => get_site_url(),
-            'siteName' => get_bloginfo('name'),
-            'multisite' => is_multisite(),
-            'description' => get_bloginfo('description'),
-            'selectedEvents' => $selectedEvents,
-        );
-        provesrc_log('sending selected events update', $data);
-        provesrc_send_request('/wp/setup', $data);
-    } catch (Exception $err) {
-        provesrc_handle_error('failed updating selected events', $err);
+        provesrc_handle_error('failed updating settings', $err);
+        return array('success' => false, 'error' => 'Exception: ' . $err->getMessage());
     }
 }
 
 /** hooks - END */
 
 /** helpers */
-
-function provesrc_run_one_time_migration()
-{
-    // Check if migration has already been completed
-    $migration_completed = get_option('provesrc_migration_3_1_0_completed', false);
-    if ($migration_completed) {
-        return; // Migration already done
-    }
-    
-    // Only run for users who can manage options (admin_init already ensures admin context)
-    if (!current_user_can('manage_options')) {
-        return;
-    }
-    
-    $migrations_performed = [];
-    
-    // Migrate API key
-    $current_api_key = get_option(PROVESRC_OPTION_API_KEY);
-    if (!provesrc_isvalid_api_key($current_api_key)) {
-        // Check legacy2 key first (ps_api_key)
-        $legacy2_key = get_option(PROVESRC_LEGACY2_OPTION_API_KEY);
-        if (provesrc_isvalid_api_key($legacy2_key)) {
-            update_option(PROVESRC_OPTION_API_KEY, $legacy2_key);
-            $migrations_performed[] = PROVESRC_LEGACY2_OPTION_API_KEY . ' -> ' . PROVESRC_OPTION_API_KEY;
-        } else {
-            // Check oldest legacy key (api_key)
-            $legacy_key = get_option(PROVESRC_LEGACY_OPTION_API_KEY);
-            if (provesrc_isvalid_api_key($legacy_key)) {
-                update_option(PROVESRC_OPTION_API_KEY, $legacy_key);
-                $migrations_performed[] = PROVESRC_LEGACY_OPTION_API_KEY . ' -> ' . PROVESRC_OPTION_API_KEY;
-            }
-        }
-    }
-    
-    // Migrate other options
-    $option_migrations = [
-        [PROVESRC_LEGACY_OPTION_DEBUG_KEY, PROVESRC_OPTION_DEBUG_KEY],
-        [PROVESRC_LEGACY_OPTION_EVENTS_KEY, PROVESRC_OPTION_EVENTS_KEY],
-        [PROVESRC_LEGACY_OPTION_TOS_KEY, PROVESRC_OPTION_TOS_KEY],
-        [PROVESRC_LEGACY_OPTION_ANALYTICS_KEY, PROVESRC_OPTION_ANALYTICS_KEY],
-    ];
-    
-    foreach ($option_migrations as $migration) {
-        $old_key = $migration[0];
-        $new_key = $migration[1];
-        
-        // Only migrate if new option doesn't exist but old one does
-        $new_value = get_option($new_key, null);
-        if ($new_value === null) {
-            $old_value = get_option($old_key, null);
-            if ($old_value !== null) {
-                update_option($new_key, $old_value);
-                $migrations_performed[] = $old_key . ' -> ' . $new_key;
-            }
-        }
-    }
-    
-    // Mark migration as completed
-    update_option('provesrc_migration_3_1_0_completed', true);
-    
-    if (!empty($migrations_performed)) {
-        provesrc_log('One-time migration completed. Migrated: ' . implode(', ', $migrations_performed));
-    } else {
-        provesrc_log('One-time migration completed. No migrations needed.');
-    }
-}
-
-function provesrc_get_option_with_fallback($new_key, $old_key, $default = false)
-{
-    // Try new option first
-    $value = get_option($new_key, null);
-    if ($value !== null) {
-        return $value;
-    }
-    
-    // Fall back to old option (migration happens separately on admin_init)
-    $old_value = get_option($old_key, null);
-    if ($old_value !== null) {
-        return $old_value;
-    }
-    
-    return $default;
-}
 
 function provesrc_send_webhook($order)
 {
@@ -600,7 +463,7 @@ function provesrc_send_error($message, $err, $data = null)
     }
 }
 
-function provesrc_send_request($path, $data, $ignoreAuth = false)
+function provesrc_send_request($path, $data, $ignoreAuth = false, $apiKey = null, $webhookSecret = null)
 {
     try {
         $headers = array(
@@ -608,13 +471,25 @@ function provesrc_send_request($path, $data, $ignoreAuth = false)
             'x-plugin-version' => PROVESRC_VERSION,
             'x-site-url' => get_site_url(),
             'x-wp-version' => get_bloginfo('version'),
+            'x-api-version' => 2,
         );
 
-        $apiKey = provesrc_get_api_key();
-        if (!$ignoreAuth && $apiKey == null) {
+        // Use provided values or fetch from database
+        if ($apiKey === null) {
+            $apiKey = provesrc_get_api_key();
+        }
+        if ($webhookSecret === null) {
+            $webhookSecret = provesrc_get_webhook_secret();
+        }
+        
+        if (!$ignoreAuth && ($apiKey == null || $webhookSecret == null)) {
             return;
-        } else if (!empty($apiKey)) {
+        }
+        if (!empty($apiKey)) {
             $headers['authorization'] = "Bearer $apiKey";
+        }
+        if(!empty($webhookSecret)) {
+            $headers['x-webhook-secret'] = $webhookSecret;
         }
 
         if (provesrc_has_woocommerce()) {
@@ -622,12 +497,12 @@ function provesrc_send_request($path, $data, $ignoreAuth = false)
         }
 
         $url = PROVESRC_HOST . $path;
-        $data = array(
+        $requestData = array(
             'headers' => $headers,
             'body' => json_encode($data),
         );
         provesrc_log('sending request', ['url' => $url]);
-        $res = wp_remote_post($url, $data);
+        $res = wp_remote_post($url, $requestData);
         provesrc_log('got response ' . $url, $res);
         return $res;
     } catch (Exception $err) {
@@ -643,52 +518,27 @@ function provesrc_handle_error($message, $err, $data = null)
 
 function provesrc_get_api_key()
 {
-    // Check current key first
-    $apiKey = get_option(PROVESRC_OPTION_API_KEY);
-    if (provesrc_isvalid_api_key($apiKey)) {
-        return $apiKey;
-    }
-    
-    // Check legacy2 key (ps_api_key) - more recent legacy
-    $legacy2Key = get_option(PROVESRC_LEGACY2_OPTION_API_KEY);
-    if (provesrc_isvalid_api_key($legacy2Key)) {
-        return $legacy2Key;
-    }
-    
-    // Check legacy key (api_key) - oldest legacy
-    $legacyKey = get_option(PROVESRC_LEGACY_OPTION_API_KEY);
-    if (provesrc_isvalid_api_key($legacyKey)) {
-        return $legacyKey;
-    }
-    
-    return null;
+    return get_option(PROVESRC_OPTION_API_KEY);
+}
+
+function provesrc_get_webhook_secret()
+{
+    return get_option(PROVESRC_OPTION_WEBHOOK_SECRET);
 }
 
 function provesrc_get_debug()
 {
-    return provesrc_get_option_with_fallback(
-        PROVESRC_OPTION_DEBUG_KEY,
-        PROVESRC_LEGACY_OPTION_DEBUG_KEY,
-        false
-    );
+    return get_option(PROVESRC_OPTION_DEBUG_KEY, false);
 }
 
 function provesrc_get_tos_accepted()
 {
-    return provesrc_get_option_with_fallback(
-        PROVESRC_OPTION_TOS_KEY,
-        PROVESRC_LEGACY_OPTION_TOS_KEY,
-        false
-    );
+    return get_option(PROVESRC_OPTION_TOS_KEY, false);
 }
 
 function provesrc_get_analytics_consent()
 {
-    return provesrc_get_option_with_fallback(
-        PROVESRC_OPTION_ANALYTICS_KEY,
-        PROVESRC_LEGACY_OPTION_ANALYTICS_KEY,
-        false
-    );
+    return get_option(PROVESRC_OPTION_ANALYTICS_KEY, false);
 }
 
 function provesrc_isvalid_api_key($apiKey)
@@ -746,46 +596,19 @@ function provesrc_import_orders()
         }
     }
 
-    $orders = array();
-    if (provesrc_has_woocommerce()) {
-        $wcOrders = wc_get_orders(array(
-            'limit' => 30,
-            'orderby' => 'date',
-            'order' => 'DESC'
-        ));
-        foreach ($wcOrders as $wco) {
-            $orders[] = provesrc_get_order_payload($wco, false);
-        }
-    }
-
-    $data = array(
-        'secret' => 'simple-secret',
-        'woocommerce' => provesrc_has_woocommerce(),
-        'siteUrl' => get_site_url(),
-        'siteName' => get_bloginfo('name'),
-        'multisite' => is_multisite(),
-        'description' => get_bloginfo('description'),
-        'orders' => $orders,
-    );
-
-    provesrc_log('importing last orders manually ' . '(' . count($orders) . ' orders)');
-
-    $res = provesrc_send_request('/wp/setup', $data);
-    $response_code = wp_remote_retrieve_response_code($res);
-    if ($response_code != 200) {
-        $response_body = wp_remote_retrieve_body($res);
-        $response_data = json_decode($response_body, true);
-        if (isset($response_data['error'])) {
-            $error_message = $response_data['error'];
-        } else {
-            $error_message = 'unexpected error ' . $response_code;
-        }
-        wp_send_json_error('Failed to import orders: ' . $error_message, $response_code);
-        set_transient('provesrc_error_notice', $error_message, 60);
-        provesrc_handle_error('failed sending request', $error_message);
-    } else {
+    provesrc_log('importing last orders manually');
+    
+    // Use provesrc_api_key_updated with sendOrders = true to send full setup with orders
+    $result = provesrc_api_key_updated(null, null, true);
+    
+    if ($result['success']) {
         set_transient($transient_key, current_time('timestamp'), $rate_limit_seconds);
         wp_send_json_success('Import orders completed');
+    } else {
+        $error_message = isset($result['error']) ? $result['error'] : 'Unknown error';
+        $response_code = isset($result['response_code']) ? $result['response_code'] : 500;
+        wp_send_json_error('Failed to import orders: ' . $error_message, $response_code);
+        provesrc_handle_error('failed sending request', $error_message);
     }
 }
 
@@ -824,21 +647,18 @@ function provesrc_admin_menu_page_html()
     }
 
     $apiKey = provesrc_get_api_key(); 
-    $selectedEvents = provesrc_get_option_with_fallback(
-        PROVESRC_OPTION_EVENTS_KEY,
-        PROVESRC_LEGACY_OPTION_EVENTS_KEY,
-        []
-    );
+    $webhookSecret = provesrc_get_webhook_secret();
+    $selectedEvents = get_option(PROVESRC_OPTION_EVENTS_KEY, array());
     $tosAccepted = $apiKey ? true : provesrc_get_tos_accepted();
     if (!$selectedEvents) {
         $selectedEvents = ['woocommerce_checkout_order_processed', 'woocommerce_order_status_completed'];
     }
     $woocommerce_hooks = [
         'woocommerce_order_status_completed' => 'Order Status Completed (Recommended)',
+        'woocommerce_checkout_order_processed' => 'Checkout Order Processed (Recommended)',
         'woocommerce_order_status_pending' => 'Order Status Pending Payment',
         'woocommerce_order_status_processing' => 'Order Status Processing',
         'woocommerce_checkout_create_order' => 'Checkout Order Created',
-        'woocommerce_checkout_order_processed' => 'Checkout Order Processed (Recommended)',
         'woocommerce_payment_complete' => 'Payment Complete',
         'woocommerce_thankyou' => 'Thank You',
         'woocommerce_new_order' => 'New Order',
@@ -856,51 +676,96 @@ function provesrc_admin_menu_page_html()
             do_settings_sections(PROVESRC_OPTIONS_GROUP);
             ?>
             <div class="ps-settings-container">
-                <?php if ($apiKey != null) { ?>
-                    <div class="ps-success">ProveSource is Installed</div>
+                <?php 
+                if ($apiKey != null && $webhookSecret != null) { ?>
+                    <div class="ps-success">ProveSource is Active</div>
                     <div class="ps-warning">
-                        If you still see <strong>"waiting for data..."</strong> open your website in <strong>incognito</strong> or <strong>clear cache</strong>
+                        If you still see <strong>"waiting for data..."</strong> in the ProveSource dashboard open your website in <strong>incognito</strong> or <strong>clear cache</strong>
                         <br>If you have <strong>cache or security plugins</strong>, please <a href="http://help.provesrc.com/en/articles/4206151-common-wordpress-woocommerce-issues">see this guide</a> about possible issues and how to solve them
                     </div>
-                <?php } else { ?>
-                    <div class="ps-red-warning">Add your API Key below</div>
+                <?php } elseif (empty($apiKey) || empty($webhookSecret)) { ?>
+                    <div class="ps-red-warning">Add your API Key and Webhook Secret below</div>
                     <div class="account-link">If you don't have an account - <a href="https://console.provesrc.com/?utm_source=woocommerce&utm_medium=plugin&utm_campaign=woocommerce-signup#/signup" target="_blank">signup here!</a></div>
+
                 <?php } ?>
-                <div class="label">Your API Key: <span style="color: #dc3232;">*</span></div>
-                    <input type="text" class="ps-apikey" placeholder="required" name="<?php echo esc_attr(PROVESRC_OPTION_API_KEY); ?>" value="<?php echo esc_attr($apiKey); ?>" />
-                <div class="m-t"><a href="https://console.provesrc.com/#/settings" target="_blank">Where is my API Key?</a></div>
-                <?php if (provesrc_has_woocommerce()) { ?>
-                    <div class="m-t-2">
-                        <label class="strong" for="woo_events">WooCommerce Events <span style="color: #dc3232;">*</span></label>
-                        <p class="description">Select which WooCommerce order/checkout events ProveSource will track:</p>
-                        <?php foreach ($woocommerce_hooks as $hook_value => $hook_label) { 
-                            $isChecked = in_array($hook_value, (array) $selectedEvents);
-                            ?>
-                            <input id="woo_events" type="checkbox" 
-                                name="<?php echo esc_attr(PROVESRC_OPTION_EVENTS_KEY . '[]'); ?>" 
-                                value="<?php echo esc_attr($hook_value); ?>"
-                                <?php checked($isChecked); ?> >
-                                <?php echo esc_html($hook_label); ?>
-                            </input>
-                            <br>
-                        <?php } ?>
-                    </div>
-                <?php } ?>
-                <div style="overflow: auto; margin-top:10px">
-                    <div style="display: flex;  align-items: center;">
-                        <div>
-                            <div class="d-inline-block m-r strong" style="height:25px; line-height: 2.4em">Enable Debug Mode:</div>
-                            <div style="margin-top:-2px;">
-                                <a href="#" id="download_debug_log" style="text-decoration: none; color: #0073aa;">Download Debug Log</a>
+                
+                <table class="form-table ps-settings-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="provesrc_api_key">Your API Key <span style="color: #dc3232;">*</span></label>
+                            <p class="description">Get your <a href="https://console.provesrc.com/#/settings" target="_blank">API Key here</a></p>
+                        </th>
+                        <td>
+                            <input type="text" id="provesrc_api_key" class="ps-apikey regular-text" placeholder="eyJhbG..." name="<?php echo esc_attr(PROVESRC_OPTION_API_KEY); ?>" value="<?php echo esc_attr($apiKey); ?>" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="provesrc_webhook_secret">Webhook Secret <span style="color: #dc3232;">*</span></label>
+                            <p class="description">Get your <a href="https://console.provesrc.com/#/settings" target="_blank">Webhook Secret here</a></p>
+                        </th>
+                        <td>
+                            <input type="text" id="provesrc_webhook_secret" class="ps-apikey regular-text" placeholder="550e8400-e29b..." name="<?php echo esc_attr(PROVESRC_OPTION_WEBHOOK_SECRET); ?>" value="<?php echo esc_attr(get_option(PROVESRC_OPTION_WEBHOOK_SECRET)); ?>" />
+                        </td>
+                    </tr>
+                    <?php if (provesrc_has_woocommerce()) { ?>
+                    <tr>
+                        <th scope="row">
+                            <label for="woo_events">WooCommerce Events <span style="color: #dc3232;">*</span></label>
+                            <p class="description">Select which WooCommerce order/checkout events ProveSource will track:</p>
+                        </th>
+                        <td>
+                            <?php foreach ($woocommerce_hooks as $hook_value => $hook_label) { 
+                                $isChecked = in_array($hook_value, (array) $selectedEvents);
+                                ?>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input id="woo_events" type="checkbox" 
+                                        name="<?php echo esc_attr(PROVESRC_OPTION_EVENTS_KEY . '[]'); ?>" 
+                                        value="<?php echo esc_attr($hook_value); ?>"
+                                        <?php checked($isChecked); ?> />
+                                    <?php echo esc_html($hook_label); ?>
+                                </label>
+                            <?php } ?>
+                        </td>
+                    </tr>
+                    <?php } ?>
+                    <tr>
+                        <th scope="row">
+                            <label for="ps-toggle">Enable Debug Mode</label>
+                            <p class="description"><a href="#" id="download_debug_log">Download Debug Log</a></p>
+                        </th>
+                        <td>
+                            <div class="ps-toggle">
+                                <input type="checkbox" class="ps-toggle-checkbox" id="ps-toggle" tabindex="0"
+                                    name="<?php echo esc_attr(PROVESRC_OPTION_DEBUG_KEY); ?>" <?php if (provesrc_get_debug()) { echo "checked"; } ?>>
+                                <label class="ps-toggle-label" for="ps-toggle"></label>
                             </div>
-                        </div>
-                        <div class="d-inline-block ps-toggle" style="float: left;margin-top:8px; margin-left:10px">
-                            <input type="checkbox" class="ps-toggle-checkbox" id="ps-toggle" tabindex="0"
-                                name="<?php echo esc_attr(PROVESRC_OPTION_DEBUG_KEY); ?>" <?php if (provesrc_get_debug()) { echo "checked"; } ?>>
-                            <label class="ps-toggle-label" for="ps-toggle"></label>
-                        </div>
-                    </div>
-                </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="analytics_checkbox">Analytics Consent</label>
+                        </th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_ANALYTICS_KEY); ?>" value="1" <?php checked(provesrc_get_analytics_consent()); ?> id="analytics_checkbox">
+                                Allow analytics data about plugin activity and website data (optional)
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="tos_checkbox">Terms of Service <span style="color: #dc3232;">*</span></label>
+                        </th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_TOS_KEY); ?>" value="1" <?php checked($tosAccepted); ?> required id="tos_checkbox">
+                                By using the ProveSource plugin, you agree to our <a href="https://provesrc.com/terms/" target="_blank">Terms of Service</a>
+                            </label>
+                            <p class="description">(ProveSource will add provesrc.js to your website and automatically retrieve website name, description, URL and recent orders for initial setup).</p>
+                        </td>
+                    </tr>
+                </table>
                 <script type="text/javascript">
                     jQuery(document).ready(function($) {
                         $('#download_debug_log').on('click', function(e) {
@@ -937,19 +802,6 @@ function provesrc_admin_menu_page_html()
                     });
                 </script>
             </div>
-            <div class="m-t-2">
-                <label>
-                    <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_ANALYTICS_KEY); ?>" value="1" <?php checked(provesrc_get_analytics_consent()); ?> id="analytics_checkbox">
-                    Allow analytics data about plugin activity and website data (optional)
-                </label>
-            </div>
-            <div class="m-t-1">
-                <label>
-                    <input type="checkbox" name="<?php echo esc_attr(PROVESRC_OPTION_TOS_KEY); ?>" value="1" <?php checked($tosAccepted); ?> required id="tos_checkbox">
-                    By using the ProveSource plugin, you agree to our <a href="https://provesrc.com/terms/" target="_blank">Terms of Service</a><span style="color: #dc3232;"> *</span><br>
-                    <span style="margin-left: 23px; font-size: 0.9em;">(ProveSource will add provesrc.js to your website and automatically retrieve website name, description, URL and recent orders for initial setup).</span>
-                </label>
-            </div>
             <style>
                 .ps-spinner {
                     display: inline-block;
@@ -975,16 +827,17 @@ function provesrc_admin_menu_page_html()
                     function toggleButtons() {
                         var tosChecked = $('#tos_checkbox').is(':checked');
                         var apiKey = $('[name="<?php echo esc_js(PROVESRC_OPTION_API_KEY); ?>"]').val();
+                        var webhookSecret = $('[name="<?php echo esc_js(PROVESRC_OPTION_WEBHOOK_SECRET); ?>"]').val();
                         
-                        // Save button is enabled if Terms of Service is checked (API key is optional)
+                        // Save button is enabled if Terms of Service is checked (API key and webhook secret are optional)
                         if (tosChecked) {
                             $('#submit').prop('disabled', false);
                         } else {
                             $('#submit').prop('disabled', true);
                         }
                         
-                        // Import button is only enabled if API key is valid
-                        if (apiKey && tosChecked) {
+                        // Import button is only enabled if API key is valid and webhook secret is provided
+                        if (apiKey && webhookSecret && webhookSecret.trim() !== '' && tosChecked) {
                             $('#import_orders_button').prop('disabled', <?php echo esc_js(!provesrc_isvalid_api_key($apiKey) ? 'true' : 'false'); ?>);
                         } else {
                             $('#import_orders_button').prop('disabled', true);
@@ -1010,6 +863,7 @@ function provesrc_admin_menu_page_html()
 
                     $('#tos_checkbox').on('change', toggleButtons);
                     $('[name="<?php echo esc_html(PROVESRC_OPTION_API_KEY); ?>"]').on('input', toggleButtons);
+                    $('[name="<?php echo esc_html(PROVESRC_OPTION_WEBHOOK_SECRET); ?>"]').on('input', toggleButtons);
                     toggleButtons();
                 });
             </script>
@@ -1086,10 +940,11 @@ function provesrc_admin_menu_page_html()
 function provesrc_admin_notice_html()
 {
     $apiKey = provesrc_get_api_key();
+    $webhookSecret = provesrc_get_webhook_secret();
     $error_message = get_transient('provesrc_api_error');
     $success_message = get_transient('provesrc_success_message');
 
-    if ($apiKey != null && !$error_message && !$success_message) {
+    if ($apiKey != null && $webhookSecret != null && !$error_message && !$success_message) {
         return;
     }
 
@@ -1098,12 +953,14 @@ function provesrc_admin_notice_html()
 
 ?>
     <div class="notice is-dismissible <?php echo esc_attr($success_message ? 'notice-success' : 'notice-error'); ?>">
-        <?php if ($apiKey == null): ?>
-            <p class="ps-error">ProveSource is not configured! <a href="admin.php?page=provesrc">Click here</a> to set up your API key.</p>
-        <?php elseif ($error_message): ?>
-            <p class="ps-error"><a href="admin.php?page=provesrc">ProveSource</a> encountered an error (check your API key): <?php echo esc_html($error_message); ?></p>
-        <?php elseif ($success_message): ?>
+        <?php if ($success_message): ?>
             <p class="ps-success"><?php echo esc_html($success_message); ?></p>
+        <?php elseif ($apiKey == null): ?>
+            <p class="ps-error">ProveSource API Key is missing! <a href="admin.php?page=provesrc">Click here</a> to configure your API key.</p>
+        <?php elseif ($webhookSecret == null): ?>
+            <p class="ps-error">ProveSource Webhook Secret is missing! <a href="admin.php?page=provesrc">Click here</a> to configure your webhook secret.</p>
+        <?php elseif ($error_message): ?>
+            <p class="ps-error"><a href="admin.php?page=provesrc">ProveSource</a> encountered an error: <?php echo esc_html($error_message); ?></p>
         <?php endif; ?>
     </div>
 <?php

@@ -5,7 +5,7 @@ Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
 Requires PHP: 5.2
 Requires at least: 3.0
 Tested up to: 6.8
-Stable tag: 3.1.2
+Stable tag: 4.0.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -105,6 +105,9 @@ The plugin automatically transmits WooCommerce order data (including customer na
 This service is provided by Configo LTD: [terms of service](https://provesrc.com/terms), [privacy policy](https://provesrc.com/privacy).
 
 == Changelog ==
+
+= 4.0.x =
+Enhance security with webhook secret field (required)
 
 = 3.1.x =
 Updated admin options for WP plugin guideline compatability

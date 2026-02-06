@@ -1,12 +1,14 @@
 .ps-settings-container {
-	margin-top: 10px;
+	margin-top: 20px;
+	max-width: 1200px;
 }
 
 .ps-settings-container .label {
 	font-size: 16px;
-	font-weight: 700;
+	font-weight: 600;
 	padding-bottom: 10px;
 	padding-left: 2px;
+	color: #1e1e1e;
 }
 
 #ps-settings .m-t {
@@ -31,19 +33,92 @@
 
 .ps-settings-container input:focus {
 	border-color: #7725f3;
-    box-shadow: 0 0 2px rgb(119, 37, 243);
+    box-shadow: 0 0 0 2px rgba(119, 37, 243, 0.1);
+    outline: none;
 }
 
 .ps-settings-container .ps-apikey {
-	width: 50%;
-    padding: 10px;
-    border-radius: 4px;
+    width: 100%;
+    max-width: 500px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.ps-settings-container .ps-apikey:hover {
+    border-color: #bbb;
+}
+
+.ps-settings-table {
+    margin-top: 0;
+    background: #fff;
+    border-spacing: 0;
+}
+
+.ps-settings-table th {
+    width: 250px;
+    font-weight: 600;
+    padding: 20px 30px 20px 0;
+    vertical-align: top;
+    color: #1e1e1e;
+    font-size: 14px;
+}
+
+.ps-settings-table th label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.ps-settings-table th .description {
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-style: normal;
+    color: #757575;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.ps-settings-table td {
+    padding: 20px 20px 20px 0;
+}
+
+.ps-settings-table td .description {
+    margin-top: 8px;
+    margin-bottom: 0;
+    font-style: normal;
+    color: #757575;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.ps-settings-table td label {
+    font-weight: normal;
+    font-size: 14px;
+    color: #3c3c3c;
+}
+
+.ps-settings-table .ps-toggle {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.ps-settings-table tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.ps-settings-table tr:last-child {
+    border-bottom: none;
 }
 
 #ps-settings form #submit:hover{
 	background: #6310db;
     border-color: #6310db;
     color: #fff;
+    transform: translateY(-1px);
 }
 
 #ps-settings form #submit{
@@ -56,11 +131,13 @@
     width: 90px;
     height: 33px;
     font-weight: bold;
+    transition: all 0.2s ease;
 }
 
 .ps-settings-container a{
 	text-decoration: none;
 	color: #7825f3;
+	transition: color 0.2s ease;
 }
 
 .ps-settings-container a:hover{
@@ -74,51 +151,65 @@
 
 .ps-settings-container div.account-link > a{
 	color: #7825f3;
-	font-weight: bolder;
+	font-weight: 600;
 }
 
 .ps-settings-container div.account-link{
-	margin-bottom: 15px;
+	margin-bottom: 20px;
     background-color: #f9f5ff;
-    padding: 10px;
-    border-left: 5px solid #7825f3;
+    padding: 16px 18px;
+    border-left: 4px solid #7825f3;
+    border-radius: 4px;
+    font-size: 14px;
 }
 
 .ps-settings-container div.ps-success {
-	margin-bottom: 15px;
+	margin-bottom: 20px;
     background-color: #eafdea;
-    padding: 10px;
-    border-left: 5px solid rgb(123, 212, 101);
+    padding: 16px 18px;
+    border-left: 4px solid rgb(123, 212, 101);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d5a2d;
 }
 
 .ps-settings-container div.ps-warning {
-	margin-bottom: 15px;
-    background-color: rgb(222, 230, 255);
-    padding: 10px;
-    border-left: 5px solid rgb(45, 129, 255);
+	margin-bottom: 20px;
+    background-color: #eef3ff;
+    padding: 16px 18px;
+    border-left: 4px solid rgb(45, 129, 255);
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1e3a5f;
 }
 
 .ps-settings-container div.ps-red-warning {
-    margin-bottom: 15px;
-    background-color: rgb(255, 223, 223);
-    padding: 10px;
-    border-left: 5px solid rgb(240, 20, 20);
+    margin-bottom: 20px;
+    background-color: #fff0f0;
+    padding: 16px 18px;
+    border-left: 4px solid rgb(240, 20, 20);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8b0000;
 }
 
 #ps-settings > a > img.top-logo{
 	width: 215px;
-    margin-left: -7px;
+    margin-left: 0;
+    margin-bottom: 10px;
 }
 
 #ps-settings {
-	background-color: white;
+	background-color: #fff;
     margin-right: 0px;
-    padding-left: 20px;
+    padding: 30px 40px;
     margin-left: -20px;
     margin-top: 0px;
-    padding-top: 10px;
-    border-bottom: 1px dashed #7725f3;
-    padding-right: 20px;
+    border-bottom: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .ps-error {
@@ -130,7 +221,10 @@
 .ps-toggle {
     position: relative; 
     width: 50px;
-    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .ps-toggle-checkbox {
     position: absolute;
