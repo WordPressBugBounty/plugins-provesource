@@ -7,7 +7,7 @@
 /**
  * Plugin Name: ProveSource
  * Description: ProveSource is a social proof marketing platform that works with your Wordpress and WooCommerce websites out of the box
- * Version: 4.0.0
+ * Version: 4.0.1
  * Author: ProveSource LTD
  * Author URI: https://provesrc.com
  * License: GPLv3 or later
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 
 /** constants */
 define('PROVESRC_HOST', 'https://api.provesrc.com');
-define('PROVESRC_VERSION', '4.0.0');
+define('PROVESRC_VERSION', '4.0.1');
 define('PROVESRC_OPTIONS_GROUP', 'provesrc_options');
 
 define('PROVESRC_OPTION_API_KEY', 'provesrc_api_key');
@@ -299,7 +299,7 @@ function provesrc_api_key_updated($apiKey = null, $webhookSecret = null, $sendOr
         $response_code = wp_remote_retrieve_response_code($res);
         $response_body = wp_remote_retrieve_body($res);
         $response_data = json_decode($response_body, true);
-        if ($response_code != 200) {
+        if ($response_code < 200 || $response_code >= 300) {
             if (isset($response_data['error'])) {
                 $error_message = $response_data['error'];
             } else {
