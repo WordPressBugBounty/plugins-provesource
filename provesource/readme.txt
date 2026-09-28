@@ -1,93 +1,76 @@
 === ProveSource Social Proof ===
 Contributors: provesource
-Donate link: https://provesrc.com/pricing
-Tags: social proof,sales popup,fomo,testimonials,woocommerces sales
-Requires PHP: 5.2
-Requires at least: 3.0
-Tested up to: 6.8
-Stable tag: 4.0.1
+Tags: social proof, sales popup, fomo, reviews, woocommerce
+Requires PHP: 7.4
+Requires at least: 4.7
+Tested up to: 7.1
+Stable tag: 5.0.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-ProveSource Social Proof increases conversions by up to 17%, boost trust with woocommerce sales notifications and reviews, increase your credibility!
+Show recent WooCommerce sales, product reviews and live visitor counts as social proof notifications to build trust and increase conversions.
 
 == Description ==
 
-ProveSource is a [social proof tool](https://provesrc.com/) & [fomo app](https://provesrc.com/fomo-app/) that boosts conversions on your WooCommerce website.
+ProveSource is a [social proof tool](https://provesrc.com/) and [FOMO app](https://provesrc.com/fomo-app/) that boosts conversions on your WordPress and WooCommerce website.
 
-Ever booked a hotel in booking.com because it was hot selling and you didn't want to miss?
-Ever went to a restaurant based on a recommendation? 
+Ever booked a hotel because it was selling fast and you did not want to miss out?
+Ever gone to a restaurant because a friend recommended it?
 
-That’s social proof.
-* Consumers trust their what others do more than advertising when making buying decisions.
-* Consumers who experience FOMO, are more likely to purchase faster.
-* Adding social proof like sales notifications and positive reviews have been shown to increase conversions by up to 17%.
+That is social proof.
 
-Don't miss out on the power of social proof notifications!
+* Consumers trust what other people do more than advertising when they make buying decisions.
+* Consumers who experience FOMO (fear of missing out) are more likely to buy sooner.
+* Showing sales notifications and positive reviews has been shown to increase conversions by up to 17%.
 
-Social proof is a term known for long time and is often associated with terms such as "Fear Of Missing Out" (FOMO) 
-and the "herd effect" decision heuristic.
+ProveSource connects to your WordPress website and WooCommerce store and imports your recent orders, so sales notifications start showing right away.
+It shows recent orders, product reviews, page visits and live visitor counts, and each sales notification links to the purchased product for upsell and cross-sell opportunities.
 
-ProveSource automatically connects to your WordPress website and WooCommerce store and pulls recent orders to start displaying sales popup notifications & social proof right away.
-This turns your website into a more dynamic and interesting place to boost sales and increase conversions.
+= Feature highlights =
 
-ProveSource is a social proof and fomo app that displays recent sales order notifications, page visits and live traffic count. 
-The sales popup also redirects your customers to the purchased products to create an upsell and cross-sell opportunities.
+1. Sales notifications that show recent orders to create urgency.
+2. Review notifications that show your real 5 star WooCommerce product reviews.
+3. Only real orders and reviews are shown, which builds trust.
+4. Customize the position, timing, colors, images and the pages each notification shows on.
+5. Optimized for mobile, shown at the top or bottom of the screen.
+6. Clickable notifications that take visitors to the advertised product.
+7. Translated into more than 22 languages.
+8. A subtle nudge style that fits your brand instead of an obtrusive popup.
 
-# Feature Highlights
-1. Create Sales Pop to and show recent orders to create FOMO and urgency.
-2. Create 5 star reviews popups and show real positive feedback from your customers to promote add to cart and checkout.
-3. Sales pop notifications show only real orders - build trust by showing real sales.
-4. Beautifully designed orders popup with tons of customizations: position, timing, colors, images etc.
-5. Show sales pop on mobile devices - optimized and displayed on top or bottom.
-6. Boost sales and increase conversions by making the notification fully clickable to take users to the advertised product.
-7. Localized and translated! Fully supports more than 22 languages so you can use socialproof & fomo tactics in your store.
-8. Customize the order popup and fomo notification style, look and feel, position, timing, pages to display and more.
-9. Friendly to your brand and store design, using nudge style instead of obtrusive popups.
+= Integrations =
 
-# Integrations
-ProveSource integrated with 100+ services and products including: WooCommerce, Zapier, MailChimp, Elementor, Google Reviews, Capterra, Judge.me and more.
-See the [full list of integrations here](http://provesrc.com/integrations).
+ProveSource integrates with 100+ services including WooCommerce, Zapier, Mailchimp, Elementor, Google Reviews, Capterra and Judge.me.
+See the [full list of integrations](https://provesrc.com/integrations).
 
-ProveSource also builds and maintains [Shapo](https://shapo.io), a reviews and testimonials platform to collect, manage and display testimonials with easy-to-use, beautiful forms, widgets, wall of love and email campaigns.
+ProveSource also builds and maintains [Shapo](https://shapo.io), a platform to collect, manage and display reviews and testimonials with forms, widgets, a wall of love and email campaigns.
 
-# World Class Customer Support
-Our support team is available always via live chat and email - we’re here to make sure you increase conversions, show more reviews, social media followers/likes and more.
-A must have social proof platform for your marketing and conversion strategy!
+= Support =
 
-The best alternative to FOMO, UseProof, SalesPop, WPFomify, NotificationX, Nextsale, Nudgify, Bizzy, HoverSignal, Credible, WiserNotify
+Our support team is available by live chat and email.
 
 https://www.youtube.com/watch?v=dySZaQnWZa8
 
-== Why Social Proof & fomo? ==
+= Pricing =
 
-* Increase conversions by showing off recent orders, positive reviews, social proof and sales pop-up notifications
-* Instant social proof that builds trust, credibility and confidence with your visitors - let them know they are not alone and your store is busy
-* If you don't have many sales you can still show the number of visitors or product and page views to let your customers sell for you
-
-ProveSource is a subscription service, starting at $0 per month (that's right we offer a free plan), subscription 
-management is available in the ProveSource website (click the logo in the settings page).
+ProveSource is a subscription service with a free plan. Manage your subscription in the ProveSource dashboard (click the logo on the plugin settings page).
 
 == Installation ==
 
-ProveSource plugin installation is as as easy as it gets, it works with both Wordpress and WooCommerce on your websites.
-ProveSource automatically connects to your Wordpress website and Woocommerce store and pulls orders and signups as they happen.
+1. Install the plugin from the WordPress plugins screen, or unzip the plugin archive to `/wp-content/plugins`.
+2. Activate the plugin on the WordPress "Plugins" page.
+3. Select "ProveSource" in your admin sidebar.
+4. Click "Connect to ProveSource", log in or sign up, and approve your site. You can also paste the API key and webhook secret from the ProveSource dashboard settings page, accept the Terms of Service and click "Save".
+5. In the ProveSource dashboard open "Quick create" and launch the recent WooCommerce orders notification, or click "New Notification" to build one step by step.
 
-Instructions:
+The plugin adds the ProveSource script to your website and sends WooCommerce orders and reviews to ProveSource. See "External services" below for exactly what is sent and when.
 
-1. Install the plugin through the Wordpress plugins screen OR unzip the plugin archive to '/wp-content/plugins'
-2. In the Wordpress 'Plugins' page, activate the plugin.
-3. Select "ProveSource" menu item from your admin sidebar.
-4. Copy over your API key from ProveSource dashboard and hit "Save".
-5. In the ProveSource dashboard hit "New Notification" and follow the wizard to create a "Stream" WooCommerce notification.
-6. Done. Sit back and watch how social proof boosts your sales!
+== Frequently Asked Questions ==
 
-Notice:
+= Which WooCommerce order events should I select? =
 
-* ProveSource inject the ProveSource javascript code to your website to display notifications and collect visitor data.
+Keep the recommended events. Each order is sent once, on the first selected event that fires, so selecting more events never creates duplicates. The recommended set (Checkout Order Processed, Order Status Processing, Order Status Completed and Payment Complete) also catches orders from one-page and funnel checkouts, express payment buttons, subscription renewals and orders created in the admin. Failed, cancelled and refunded orders are never sent.
 
-* ProveSource is a cloud based service and the plugin communicates with the ProveSource servers, 
-including remote webhook calls, data collected includes product details and customer details.
+Orders are sent in the background by WooCommerce's Action Scheduler, which runs on WP-Cron. If WP-Cron is disabled on your site, make sure a server cron job runs it.
 
 == Screenshots ==
 
@@ -97,67 +80,88 @@ including remote webhook calls, data collected includes product details and cust
 4. Dashboard list of notifications
 
 == External services ==
-This plugin connects to the ProveSource API to display social proof notifications and collect visitor analytics data.
-This plugin adds a <script> tag, provesrc.js to your wordpress website for collecting and displaying social proof popups.
 
-The plugin automatically transmits WooCommerce order data (including customer names, locations, and purchase details) and website visitor statistics to enhance conversion rates through social proof.
+This plugin relies on ProveSource, a service operated by Configo LTD. The plugin sends nothing until you click "Connect to ProveSource" or save an API key.
+[Terms of service](https://provesrc.com/terms/), [privacy policy](https://provesrc.com/privacy/).
 
-This service is provided by Configo LTD: [terms of service](https://provesrc.com/terms), [privacy policy](https://provesrc.com/privacy).
+* **Notification script.** The plugin adds a script to every page of your site that loads `https://cdn.provesrc.com/provesrc.js`. The script shows the notifications, keeps a visitor identifier in a cookie and in local storage, records page visits and, for forms you choose to track in the ProveSource dashboard, the submitted form fields (for example a name and email). It sends this data to `api.provesrc.com`.
+* **Connect.** The "Connect to ProveSource" button opens `console.provesrc.com` with your site URL. After you approve the site, the plugin trades a one-time code with `api.provesrc.com` for your API key and webhook secret.
+* **Setup.** When you connect or save the settings, the plugin sends your site name, description and URL and the selected order events. When you connect to an account for the first time or switch to another one, and when you click "Re-import Last 30 Orders", it also sends your last 30 orders (the order data listed below), skipping unpaid, failed, cancelled and refunded orders.
+* **Orders.** For each new WooCommerce order the plugin sends, in the background: the order ID, date, total and currency, the customer's first name, last name and email (the email is used for the customer's Gravatar image), the billing or shipping city, state and country, and the products (ID, name, price, quantity, link and image). The customer IP address is sent only when an order has no city or country, so the location can be looked up. Street addresses, phone numbers and postcodes are never sent. Failed, cancelled and refunded orders are not sent.
+* **Reviews.** Your latest 100 approved WooCommerce product reviews are sent when you connect, when you save the settings and when you click "Import Reviews", and a review is sent again whenever it is approved, edited, unapproved, marked as spam or deleted. A review is sent as the author's display name, the rating, text and date, whether the author is a verified owner, and the product ID, name, link and image. Reviewer emails and IP addresses are never sent.
+* **Error reports.** When the plugin hits an error it sends the error message, a short stack trace, your site URL, the plugin, WordPress, WooCommerce and PHP versions and the order ID. No order or customer data is included.
+* **Uninstall.** When the plugin is deleted it sends your site URL so the site is removed from your ProveSource account.
 
 == Changelog ==
 
+= 5.0.0 =
+* Connect to ProveSource with one click: approve the site in the ProveSource dashboard instead of copying the API key and webhook secret
+* Show WooCommerce product reviews as ProveSource review notifications, sent by the plugin with no extra keys
+* Support the WooCommerce block checkout, "Checkout Order Processed" now covers classic and block checkout
+* Send orders in the background with Action Scheduler, each order is sent once even when several events are selected
+* New default order events (Checkout Order Processed, Order Status Processing, Order Status Completed, Payment Complete) catch orders from custom checkouts, express payments, subscription renewals and admin orders. Sites that kept the old default are moved to the new one
+* Never send failed, cancelled or refunded orders, and skip unpaid orders when importing recent orders
+* Warn on the settings page when background jobs are not running
+* Send less personal data: no street addresses, phone numbers or IP lists, prices keep their cents
+* Keep the debug log in the database instead of a public file, without order or customer data
+* Error reports contain only the message, a short trace, versions and the order id
+* Remove the unused analytics consent option, "Checkout Order Created" is replaced by "Checkout Order Processed"
+* Clean up settings and notify ProveSource when the plugin is deleted
+* Fix product image URLs on https sites, load admin styles and scripts only where needed, support network activated WooCommerce
+
 = 4.0.x =
-Enhance security with webhook secret field (required)
+* Enhance security with webhook secret field (required)
 
 = 3.1.x =
-Updated admin options for WP plugin guideline compatability
-Update screenshots
+* Updated admin options for WP plugin guideline compatibility
+* Update screenshots
 
 = 3.0.x =
-Add woocommerce event selector (multi select)
-Add option to import last 30 orders manually
-Add debug.log downloader for easier debugging
+* Add woocommerce event selector (multi select)
+* Add option to import last 30 orders manually
+* Add debug.log downloader for easier debugging
 
 = 2.3.x =
-Update WooCommerce HPOS compatability
+* Update WooCommerce HPOS compatibility
 
 = 2.2.x =
-Fix woocommerce checkout order action handler to support virtual products
-Fix woocommerce address inaccuracies
-Fix woocommerce fatal error on refunded order import
-Add more order capture options (thank-you, order complete, payment complete)
-Add debug toggle for log messages
-Add better order location check
+* Fix woocommerce checkout order action handler to support virtual products
+* Fix woocommerce address inaccuracies
+* Fix woocommerce fatal error on refunded order import
+* Add more order capture options (thank-you, order complete, payment complete)
+* Add debug toggle for log messages
+* Add better order location check
 
 = 2.1.x =
-Fix initial setup to be called on first install (import past orders)
+* Fix initial setup to be called on first install (import past orders)
 
 = 2.0.x =
-Add WooCommerce past orders auto import (up to 30 recent orders)
-Fix WooCommerce product name to not include variant text
-Add more IPs lookup for location accuracy
-Add warnings about common 3rd party plugin incompatability
+* Add WooCommerce past orders auto import (up to 30 recent orders)
+* Fix WooCommerce product name to not include variant text
+* Add more IPs lookup for location accuracy
+* Add warnings about common 3rd party plugin incompatibility
 
 = 1.4.x =
-Update snippet to latest version
-Fix errors stopping orders from completion
-Fix api key collision with other plugins
-Tested with Wordpress 5.3+ and Woocommerce 3.9+
+* Update snippet to latest version
+* Fix errors stopping orders from completion
+* Fix api key collision with other plugins
+* Tested with WordPress 5.3+ and WooCommerce 3.9+
 
 = 1.3.x =
-Added user first name and last name from registration
-Added notice about installation of plugin
-Added WooCommerce image URL https check and replace (mixed content warning)
+* Added user first name and last name from registration
+* Added notice about installation of plugin
+* Added WooCommerce image URL https check and replace (mixed content warning)
 
 = 1.2.x =
-Added support for WooCommerce user register
+* Added support for WooCommerce user register
 
 = 1.1.x =
-Added support for new user signup / register event for social proof
+* Added support for new user signup / register event for social proof
 
 = 1.0.x =
-Seamless, simple integration with all notification types supported, exclusive WooCommerce notification type.
+* Seamless, simple integration with all notification types supported, exclusive WooCommerce notification type.
 
 == Upgrade Notice ==
 
-All versions are backwards compatible and included in your plan.
+= 5.0.0 =
+One-click connect, WooCommerce review notifications and more reliable order capture. Settings are kept.

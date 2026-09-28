@@ -174,6 +174,35 @@
     color: #2d5a2d;
 }
 
+.ps-settings-container div.ps-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 16px 18px;
+    border: 1px solid #e2d4fb;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.ps-settings-container div.ps-dashboard .description {
+    margin: 4px 0 0;
+}
+
+.ps-settings-container .ps-dashboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ps-settings-container .ps-dashboard-actions a.button,
+.ps-settings-container .ps-dashboard-actions a.button:hover {
+    text-decoration: none !important;
+}
+
 .ps-settings-container div.ps-warning {
 	margin-bottom: 20px;
     background-color: #eef3ff;
@@ -262,3 +291,25 @@
 }
 
 /** switch - end */
+
+.ps-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: ps-spin 1s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes ps-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ps-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
